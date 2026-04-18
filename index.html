@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Bolão da Copa 2026 — Entre e faça seu bolão</title>
+
+<!-- Fontes -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Oswald:ital,wght@1,700;1,800&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --cream:#F2E9CE;          /* fundo creme */
+    --cream-2:#EADFBE;        /* acento triângulos */
+    --pattern:#D9C98A;        /* cor traço pattern */
+    --navy:#0E2C6E;           /* azul marinho principal */
+    --navy-deep:#081A46;      /* azul escuro (sombras/hover) */
+    --navy-ink:#122A66;       /* texto labels */
+    --gold:#E2B045;           /* dourado do título */
+    --gold-dark:#8A5E17;      /* outline dourado */
+    --muted:#8C8C8C;          /* cinza placeholder */
+    --border:#D9D9D9;         /* bordas input */
+    --tab-inactive:#E9E4D2;   /* tab desativada */
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ height:100%; }
+  body{
+    font-family:'Montserrat', system-ui, sans-serif;
+    color:var(--navy-ink);
+    background: var(--cream);
+
+    /* ===========================================================
+       PATTERN DE FUNDO — opção padrão: HEXÁGONOS SUTIS (bola de futebol)
+       Alternativas comentadas abaixo (descomenta a que quiser testar)
+    =========================================================== */
+    background-image:
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='56' height='48' viewBox='0 0 56 48'><g fill='none' stroke='%23D9C98A' stroke-width='0.9' opacity='0.55'><polygon points='28,2 52,16 52,32 28,46 4,32 4,16'/><polygon points='0,-24 24,-10 24,6 0,20 -24,6 -24,-10'/><polygon points='56,-24 80,-10 80,6 56,20 32,6 32,-10'/><polygon points='0,28 24,42 24,58 0,72 -24,58 -24,42'/><polygon points='56,28 80,42 80,58 56,72 32,58 32,42'/></g></svg>");
+    background-size: 56px 48px;
+
+    /* OPÇÃO 2 — Triângulos (original do mockup)
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'><g fill='none' stroke='%23D9C98A' stroke-width='0.8' opacity='0.55'><polygon points='0,0 80,0 0,80'/><polygon points='160,0 80,0 160,80'/><polygon points='0,160 80,160 0,80'/><polygon points='160,160 80,160 160,80'/><polygon points='80,0 160,80 80,160 0,80'/></g></svg>");
+    background-size: 220px 220px;
+    */
+
+    /* OPÇÃO 3 — Círculos concêntricos (editorial, sofisticado)
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><g fill='none' stroke='%23D9C98A' stroke-width='0.6' opacity='0.45'><circle cx='50' cy='50' r='48'/><circle cx='50' cy='50' r='38'/><circle cx='50' cy='50' r='28'/><circle cx='50' cy='50' r='18'/><circle cx='50' cy='50' r='8'/></g></svg>");
+    background-size: 180px 180px;
+    */
+
+    /* OPÇÃO 4 — Mini bolas espalhadas (lúdico, temático)
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'><g fill='none' stroke='%23D9C98A' stroke-width='0.7' opacity='0.4'><circle cx='20' cy='20' r='6'/><circle cx='80' cy='50' r='6'/><circle cx='40' cy='90' r='6'/><circle cx='100' cy='100' r='6'/></g></svg>");
+    background-size: 200px 200px;
+    */
+
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ========= LAYOUT PRINCIPAL ========= */
+  .page{
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 40px 48px 24px;
+  }
+
+  .hero{
+    display:grid;
+    grid-template-columns: 1.55fr 1fr;
+    gap: 40px;
+    align-items:start;
+  }
+
+  /* ========= COLUNA ESQUERDA / VÍDEO ========= */
+  .video-card{
+    position:relative;
+    border-radius: 18px;
+    overflow:hidden;
+    background:#000;
+    aspect-ratio: 10 / 9;
+    box-shadow: 0 18px 40px -20px rgba(14,44,110,.35), 0 2px 8px rgba(0,0,0,.08);
+  }
+
+  .video-card video{
+    width:100%;
+    height:100%;
+    object-fit: cover;
+    background:#000;
+    display:block;
+  }
+
+  .play-btn{
+    position:absolute; top:50%; left:50%;
+    transform: translate(-50%,-50%);
+    width: 96px; height: 96px; border-radius: 50%;
+    background: rgba(255,255,255,.92);
+    border: none; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow: 0 10px 30px rgba(0,0,0,.35);
+    transition: transform .18s ease, background .18s ease;
+    z-index: 3;
+  }
+  .play-btn:hover{ transform:translate(-50%,-50%) scale(1.06); background:#fff; }
+  .play-btn svg{ width:34px; height:34px; fill: var(--navy); margin-left:4px; }
+  .video-card.playing .play-btn{ opacity:0; pointer-events:none; }
+
+  /* ========= "COMO FUNCIONA" ========= */
+  .how{
+    margin-top: 22px;
+    display:flex; align-items:center; gap: 18px;
+    font-weight: 700;
+    color: var(--navy-ink);
+    font-size: 14px;
+    flex-wrap: wrap;
+  }
+  .how .icon{
+    width:34px; height:34px;
+    display:inline-flex; align-items:center; justify-content:center;
+    color: var(--navy);
+  }
+  .how strong{ color: var(--navy); font-weight: 800; letter-spacing:.3px; }
+  .how .step{ display:inline-flex; align-items:center; gap:6px; }
+  .how .step b{ color: var(--navy); font-weight:800; }
+
+  /* ========= COLUNA DIREITA ========= */
+  .right-col{
+    display:flex;
+    flex-direction:column;
+    gap: 22px;
+  }
+
+  .badges{
+    display:flex; justify-content:flex-end; align-items:center;
+    gap: 14px;
+    padding-right: 6px;
+  }
+  .flag-br{
+    width:75px;
+    height:auto;
+    border-radius: 6px;
+    box-shadow: 0 4px 10px rgba(0,0,0,.15);
+    display:block;
+  }
+  .fifa-logo{
+    width:90px;
+    height:auto;
+    display:block;
+  }
+  .fifa-description{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:2px;
+  }
+  .fifa-description .mark{
+    font-family:'Bungee', sans-serif;
+    font-size: 28px;
+    line-height:.9;
+    letter-spacing:-1px;
+    color: var(--navy-deep);
+    font-weight:900;
+  }
+  .fifa-description .sub{
+    font-size: 9px;
+    font-weight:800;
+    letter-spacing:1px;
+    color: var(--navy-deep);
+    text-transform:uppercase;
+    line-height:1.2;
+  }
+  .fifa-description .host{
+    font-size: 8px;
+    font-weight:700;
+    letter-spacing:.6px;
+    color: var(--navy-deep);
+    line-height:1.3;
+  }
+  .fifa-description .host .dot{
+    color:#E63946;
+    margin: 0 2px;
+  }
+  /* ========= CARD DE AUTH (Login + Cadastro) ========= */
+  .auth-card{
+    background:#fff;
+    border-radius: 14px;
+    overflow:hidden;
+    box-shadow: 0 20px 40px -22px rgba(14,44,110,.35), 0 2px 10px rgba(0,0,0,.05);
+  }
+
+  /* Tabs */
+  .auth-tabs{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    background: var(--tab-inactive);
+  }
+  .tab-btn{
+    background: transparent;
+    border: none;
+    padding: 16px 0;
+    font-family:'Montserrat', sans-serif;
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 2px;
+    color: var(--navy-ink);
+    text-transform:uppercase;
+    cursor: pointer;
+    opacity: .55;
+    transition: background .18s ease, opacity .18s ease, color .18s ease;
+    position: relative;
+  }
+  .tab-btn:hover{ opacity: .85; }
+  .tab-btn.active{
+    background:#fff;
+    color: var(--navy);
+    opacity: 1;
+  }
+  .tab-btn.active::after{
+    content:"";
+    position:absolute;
+    left:50%; bottom: -1px;
+    transform: translateX(-50%);
+    width: 48px; height: 3px;
+    background: var(--navy);
+    border-radius: 2px;
+  }
+
+  /* Painéis */
+  .auth-panels{ padding: 30px 32px 26px; }
+  .panel{ display:none; }
+  .panel.active{ display:block; animation: fadeIn .25s ease; }
+  @keyframes fadeIn{
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .panel-title{
+    font-family:'Montserrat', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+    color: var(--navy);
+    text-align:center;
+    letter-spacing:.3px;
+    line-height: 1.15;
+    margin-bottom: 20px;
+    text-transform:uppercase;
+  }
+
+  .field{ margin-bottom: 12px; }
+  .field input{
+    width:100%;
+    height: 48px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 0 18px;
+    font-family:'Montserrat', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: .5px;
+    color: var(--navy-ink);
+    background:#fff;
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .field input::placeholder{
+    color: var(--muted);
+    font-weight: 600;
+    letter-spacing: 1.2px;
+  }
+  .field input:focus{
+    outline:none;
+    border-color: var(--navy);
+    box-shadow: 0 0 0 3px rgba(14,44,110,.12);
+  }
+
+  .btn-submit{
+    width:100%;
+    height: 50px;
+    margin-top: 10px;
+    background: var(--navy);
+    color:#fff;
+    border:none; border-radius: 10px;
+    font-family:'Montserrat', sans-serif;
+    font-weight: 800;
+    font-size: 14px;
+    letter-spacing: 2px;
+    cursor:pointer;
+    transition: background .15s ease, transform .06s ease;
+  }
+  .btn-submit:hover{ background: var(--navy-deep); }
+  .btn-submit:active{ transform: translateY(1px); }
+
+  .links{
+    text-align:center;
+    margin-top: 16px;
+    font-size: 13.5px;
+    color: var(--navy-ink);
+  }
+  .links a{
+    color: var(--navy);
+    text-decoration:none;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .links a:hover{ text-decoration:underline; }
+
+  /* Termos & Condições (cadastro) */
+  .terms{
+    display:flex; align-items:flex-start; gap: 8px;
+    margin: 4px 2px 8px;
+    font-size: 12px;
+    color: var(--navy-ink);
+    line-height: 1.4;
+  }
+  .terms input[type="checkbox"]{
+    width:15px; height:15px; margin-top:2px;
+    accent-color: var(--navy);
+    cursor:pointer; flex-shrink:0;
+  }
+  .terms a{ color: var(--navy); font-weight: 700; text-decoration:underline; }
+
+  /* ========= RESPONSIVO ========= */
+  @media (max-width: 960px){
+    .hero{ grid-template-columns: 1fr; }
+    .page{ padding: 24px; }
+    .badges{ justify-content:flex-start; }
+  }
+  @media (max-width: 520px){
+    .auth-panels{ padding: 24px 22px 22px; }
+    .how{ font-size:13px; gap:10px; }
+    .flag-br{ width: 72px; }
+    .fifa-logo{ width: 90px; }
+  }
+</style>
+</head>
+<body>
+
+<main class="page">
+  <section class="hero">
+
+    <!-- ========== COLUNA ESQUERDA ========== -->
+    <div class="left-col">
+      <div class="video-card" id="videoCard">
+        <video id="heroVideo" preload="metadata" playsinline controls autoplay muted>
+          <source src="hero-video.mp4" type="video/mp4" />
+          Seu navegador não suporta vídeo HTML5.
+        </video>
+        <button class="play-btn" id="playBtn" aria-label="Reproduzir vídeo">
+          <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+      </div>
+
+      <div class="how">
+        <span class="icon" aria-hidden="true">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 14c3-2 6-2 9 0s6 2 9 0"/>
+            <circle cx="12" cy="8" r="3"/>
+            <path d="M12 11v3"/>
+          </svg>
+        </span>
+        <strong>COMO FUNCIONA?</strong>
+        <span class="step"><b>1.</b> Crie seu Bolão.</span>
+        <span class="step"><b>2.</b> Convide Amigos.</span>
+        <span class="step"><b>3.</b> Dê seus Palpites.</span>
+        <span class="step"><b>4.</b> Ganhe Prêmios</span>
+      </div>
+    </div>
+
+    <!-- ========== COLUNA DIREITA ========== -->
+    <div class="right-col">
+      <div class="badges">
+        <img src="bandeira_br.png" alt="Bandeira do Brasil" class="flag-br" />
+        <img src="logo-copa2.jpg" alt="FIFA World Cup 2026" class="fifa-logo" />
+        <div class="fifa-description">
+          <div class="mark">26</div>
+          <div class="sub">FIFA World Cup</div>
+          <div class="host">USA <span class="dot">•</span> MEXICO <span class="dot">•</span> CANADA</div>
+        </div>
+      </div>
+
+      <div class="auth-card">
+        <!-- Tabs -->
+        <div class="auth-tabs" role="tablist">
+          <button class="tab-btn active" data-tab="login" role="tab" aria-selected="true">Entrar</button>
+          <button class="tab-btn" data-tab="signup" role="tab" aria-selected="false">Cadastrar</button>
+        </div>
+
+        <div class="auth-panels">
+          <!-- LOGIN -->
+          <form class="panel active" data-panel="login" id="loginForm" autocomplete="on" novalidate>
+            <h2 class="panel-title">Entre e faça<br>seu bolão</h2>
+            <div class="field">
+              <input type="email" name="email" placeholder="EMAIL" autocomplete="email" required />
+            </div>
+            <div class="field">
+              <input type="password" name="password" placeholder="SENHA" autocomplete="current-password" required />
+            </div>
+            <button type="submit" class="btn-submit">ENTRAR</button>
+            <div class="links">
+              <a href="#forgot">Esqueceu a senha?</a>
+            </div>
+          </form>
+
+          <!-- CADASTRO -->
+          <form class="panel" data-panel="signup" id="signupForm" autocomplete="on" novalidate>
+            <h2 class="panel-title">Crie sua conta<br>e jogue agora</h2>
+            <div class="field">
+              <input type="text" name="fullname" placeholder="NOME COMPLETO" autocomplete="name" required />
+            </div>
+            <div class="field">
+              <input type="email" name="email" placeholder="EMAIL" autocomplete="email" required />
+            </div>
+            <div class="field">
+              <input type="password" name="password" placeholder="SENHA" autocomplete="new-password" required minlength="6" />
+            </div>
+            <div class="field">
+              <input type="password" name="confirm" placeholder="CONFIRMAR SENHA" autocomplete="new-password" required minlength="6" />
+            </div>
+            <label class="terms">
+              <input type="checkbox" name="terms" required />
+              <span>Aceito os <a href="#terms">Termos de Uso</a> e a <a href="#privacy">Política de Privacidade</a>.</span>
+            </label>
+            <button type="submit" class="btn-submit">CRIAR CONTA</button>
+            <div class="links">
+              <span>Já tem conta? <a data-switch="login"><b>Entrar</b></a></span>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+  </section>
+</main>
+
+<script>
+  /* Tabs login/cadastro */
+  (function(){
+    const tabs   = document.querySelectorAll('.tab-btn');
+    const panels = document.querySelectorAll('.panel');
+
+    function activate(name){
+      tabs.forEach(t => {
+        const active = t.dataset.tab === name;
+        t.classList.toggle('active', active);
+        t.setAttribute('aria-selected', active ? 'true' : 'false');
+      });
+      panels.forEach(p => p.classList.toggle('active', p.dataset.panel === name));
+    }
+
+    tabs.forEach(t => t.addEventListener('click', () => activate(t.dataset.tab)));
+
+    document.querySelectorAll('[data-switch]').forEach(l => {
+      l.addEventListener('click', e => {
+        e.preventDefault();
+        activate(l.dataset.switch);
+      });
+    });
+  })();
+
+  /* Vídeo */
+  (function(){
+    const card = document.getElementById('videoCard');
+    const video = document.getElementById('heroVideo');
+    const playBtn = document.getElementById('playBtn');
+
+    function onPlay(){ card.classList.add('playing'); }
+    function onPause(){ card.classList.remove('playing'); }
+
+    playBtn.addEventListener('click', () => {
+      if (video.paused) video.play();
+      else video.pause();
+    });
+    video.addEventListener('play', onPlay);
+    video.addEventListener('playing', onPlay);
+    video.addEventListener('pause', onPause);
+    video.addEventListener('ended', onPause);
+  })();
+
+  /* Stubs de submit */
+  document.getElementById('loginForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    console.log('Login submit', { email: this.email.value, password: this.password.value });
+  });
+  document.getElementById('signupForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    if (this.password.value !== this.confirm.value){
+      alert('As senhas não conferem.');
+      return;
+    }
+    console.log('Signup submit', {
+      fullname: this.fullname.value,
+      email: this.email.value,
+      password: this.password.value
+    });
+  });
+</script>
+</body>
+</html>

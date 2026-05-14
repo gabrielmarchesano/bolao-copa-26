@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Banco de dados local (SQLite)
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+
+# Variáveis de ambiente (NUNCA commitar)
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db

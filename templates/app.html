@@ -1,0 +1,1852 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Bolão da Copa 2026</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Oswald:ital,wght@1,700;1,800&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --cream:#F2E9CE;
+    --cream-2:#EADFBE;
+    --pattern:#D9C98A;
+    --navy:#0E2C6E;
+    --navy-deep:#081A46;
+    --navy-ink:#122A66;
+    --navy-soft:#E8ECF7;
+    --gold:#E2B045;
+    --gold-dark:#8A5E17;
+    --muted:#8C8C8C;
+    --border:#E1E5EC;
+    --divider:#EDEEF2;
+    --white:#FFFFFF;
+    --bg-soft:#F7F5EC;
+    --success:#1B9E5B;
+    --danger:#D03434;
+
+    --sidebar-w: 240px;
+    --topbar-h: 64px;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ height:100%; }
+  body{
+    font-family:'Montserrat', system-ui, sans-serif;
+    color:var(--navy-ink);
+    background: var(--cream);
+    background-image:
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='56' height='48' viewBox='0 0 56 48'><g fill='none' stroke='%23D9C98A' stroke-width='0.9' opacity='0.4'><polygon points='28,2 52,16 52,32 28,46 4,32 4,16'/><polygon points='0,-24 24,-10 24,6 0,20 -24,6 -24,-10'/><polygon points='56,-24 80,-10 80,6 56,20 32,6 32,-10'/><polygon points='0,28 24,42 24,58 0,72 -24,58 -24,42'/><polygon points='56,28 80,42 80,58 56,72 32,58 32,42'/></g></svg>");
+    background-size: 56px 48px;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ========= TOP BAR ========= */
+  .topbar{
+    position:fixed; top:0; left:0; right:0; height: var(--topbar-h);
+    background: var(--navy);
+    color:#fff;
+    display:flex; align-items:center;
+    padding: 0 22px;
+    z-index: 50;
+    box-shadow: 0 2px 10px rgba(0,0,0,.15);
+  }
+  .brand{
+    display:flex; align-items:center; gap: 12px;
+    font-family:'Montserrat', sans-serif;
+    font-weight: 800; font-size: 16px;
+    letter-spacing: .6px;
+    text-transform: uppercase;
+  }
+  .brand .logo-cup{
+    width: 36px; height: 36px; object-fit: contain;
+    filter: brightness(0) invert(1);
+  }
+  .brand em{ font-style: normal; color: var(--gold); font-weight: 800; }
+
+  .topbar-right{
+    margin-left:auto;
+    display:flex; align-items:center; gap: 14px;
+  }
+  .user-chip{
+    display:flex; align-items:center; gap: 10px;
+    padding: 6px 10px 6px 6px; border-radius: 999px;
+    background: rgba(255,255,255,.08);
+    cursor: pointer;
+    transition: background .15s ease;
+  }
+  .user-chip:hover{ background: rgba(255,255,255,.14); }
+  .user-chip .avatar{
+    width: 30px; height: 30px; border-radius: 50%;
+    background: var(--gold);
+    color: var(--navy-deep);
+    font-weight: 800; font-size: 12px;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink: 0;
+  }
+  .user-chip .name{
+    font-size: 13px; font-weight: 700; color: #fff;
+  }
+  .logout{
+    background: transparent; color:#fff;
+    border: 1px solid rgba(255,255,255,.2);
+    padding: 6px 12px; border-radius: 8px;
+    font-family:inherit; font-size: 12px; font-weight: 700;
+    letter-spacing: .8px; cursor:pointer;
+    transition: background .15s ease;
+  }
+  .logout:hover{ background: rgba(255,255,255,.08); }
+
+  /* ========= SIDEBAR ========= */
+  .sidebar{
+    position: fixed;
+    top: var(--topbar-h);
+    left: 0; bottom: 0;
+    width: var(--sidebar-w);
+    background: #fff;
+    border-right: 1px solid var(--border);
+    padding: 20px 14px;
+    z-index: 40;
+    overflow-y: auto;
+  }
+  .nav-group-title{
+    font-size: 10px; font-weight: 800;
+    letter-spacing: 1.8px; text-transform: uppercase;
+    color: var(--muted);
+    padding: 10px 12px 8px;
+  }
+  .nav-item{
+    display:flex; align-items:center; gap: 12px;
+    padding: 11px 12px;
+    border-radius: 10px;
+    color: var(--navy-ink);
+    font-size: 14px; font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    margin-bottom: 2px;
+    transition: background .15s ease, color .15s ease;
+    border: none; width: 100%;
+    background: transparent;
+    font-family: inherit;
+    text-align: left;
+  }
+  .nav-item:hover{ background: var(--navy-soft); }
+  .nav-item.active{
+    background: var(--navy);
+    color: #fff;
+  }
+  .nav-item svg{ flex-shrink: 0; }
+  .nav-item .badge{
+    margin-left:auto;
+    background: var(--gold); color: var(--navy-deep);
+    font-size: 10px; font-weight: 800;
+    padding: 2px 8px; border-radius: 999px;
+  }
+
+  /* ========= MAIN ========= */
+  .main{
+    padding: calc(var(--topbar-h) + 28px) 40px 40px calc(var(--sidebar-w) + 40px);
+    min-height: 100vh;
+  }
+  .page-title{
+    font-size: 28px; font-weight: 800;
+    color: var(--navy);
+    margin-bottom: 6px;
+    letter-spacing: -.3px;
+  }
+  .page-subtitle{
+    color: var(--navy-ink); opacity:.7;
+    font-size: 14px; font-weight: 500;
+    margin-bottom: 28px;
+  }
+
+  /* ========= SECTIONS / CARDS ========= */
+  .section{ margin-bottom: 36px; }
+  .section-header{
+    display:flex; align-items:center; justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .section-title{
+    font-size: 16px; font-weight: 800;
+    color: var(--navy);
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+  .section-link{
+    font-size: 12px; font-weight: 700;
+    color: var(--navy); text-decoration: none;
+    letter-spacing: .8px; text-transform: uppercase;
+    cursor: pointer;
+    border: none; background: transparent;
+    font-family: inherit;
+  }
+  .section-link:hover{ text-decoration: underline; }
+  .section-link::after{ content: " →"; }
+
+  .matches-grid{
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .match-card{
+    background: #fff;
+    border-radius: 14px;
+    padding: 18px;
+    box-shadow: 0 4px 12px rgba(14,44,110,.06), 0 1px 2px rgba(0,0,0,.04);
+    border: 1px solid var(--divider);
+    transition: transform .12s ease, box-shadow .12s ease;
+  }
+  .match-card:hover{
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(14,44,110,.12), 0 2px 6px rgba(0,0,0,.06);
+  }
+  .match-meta-top{
+    display:flex; justify-content: space-between; align-items: center;
+    margin-bottom: 14px;
+    font-size: 11px; font-weight: 700; letter-spacing: .8px;
+    text-transform: uppercase;
+    color: var(--navy);
+  }
+  .match-group{
+    background: var(--navy-soft);
+    padding: 3px 10px; border-radius: 6px;
+    color: var(--navy);
+  }
+  .match-round{ color: var(--muted); font-weight: 600; letter-spacing: .5px; }
+
+  .match-teams{
+    display:flex; align-items: center; justify-content: space-around;
+    gap: 8px; padding: 10px 0;
+  }
+  .team{
+    display:flex; flex-direction: column; align-items: center;
+    gap: 8px;
+    flex: 1; min-width: 0;
+  }
+  .team .flag-wrap{
+    width: 48px; height: 36px;
+    border-radius: 4px; overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,.2);
+    background: var(--navy-soft);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .team .flag-wrap img{
+    width: 100%; height: 100%; object-fit: cover;
+  }
+  .team .flag-wrap.placeholder{
+    color: var(--navy); font-weight: 800; font-size: 14px;
+  }
+  .team .name{
+    font-size: 12px; font-weight: 700;
+    color: var(--navy-ink);
+    text-align: center;
+    line-height: 1.15;
+    max-width: 90px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .vs{
+    font-family:'Oswald', sans-serif; font-style: italic;
+    font-size: 22px; font-weight: 800;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  .match-meta-bot{
+    margin-top: 14px; padding-top: 12px;
+    border-top: 1px solid var(--divider);
+    display:flex; flex-direction: column; gap: 4px;
+    font-size: 12px; color: var(--navy-ink);
+  }
+  .match-meta-bot .datetime{
+    font-weight: 800; color: var(--navy);
+    font-size: 13px;
+  }
+  .match-meta-bot .venue{
+    color: var(--muted); font-weight: 600;
+    display:flex; align-items:center; gap: 4px;
+  }
+
+  /* === CTAs — Criar / Entrar Bolão === */
+  .cta-grid{
+    display:grid; grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+  .cta-card{
+    position: relative;
+    padding: 24px 26px;
+    border-radius: 14px;
+    cursor: pointer;
+    overflow: hidden;
+    transition: transform .15s ease, box-shadow .15s ease;
+    display:flex; flex-direction: column; gap: 8px;
+    min-height: 140px;
+    border: none; font-family: inherit;
+    text-align: left;
+  }
+  .cta-card:hover{
+    transform: translateY(-2px);
+    box-shadow: 0 18px 32px -16px rgba(14,44,110,.5);
+  }
+  .cta-primary{
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-deep) 100%);
+    color: #fff;
+  }
+  .cta-secondary{
+    background: #fff;
+    border: 2px solid var(--navy);
+    color: var(--navy);
+  }
+  .cta-card .icon{
+    width: 38px; height: 38px;
+    display:flex; align-items:center; justify-content:center;
+    margin-bottom: 6px;
+  }
+  .cta-primary .icon{
+    background: rgba(255,255,255,.15);
+    border-radius: 10px;
+  }
+  .cta-secondary .icon{
+    background: var(--navy-soft);
+    border-radius: 10px;
+  }
+  .cta-card h3{
+    font-size: 18px; font-weight: 800;
+    letter-spacing: -.2px;
+  }
+  .cta-card p{
+    font-size: 13px; font-weight: 500;
+    opacity: .85;
+    line-height: 1.35;
+  }
+  .cta-card .arrow{
+    position: absolute; bottom: 18px; right: 22px;
+    font-size: 18px; font-weight: 800;
+  }
+
+  /* === Meus Bolões Preview === */
+  .bolao-list{
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid var(--divider);
+    overflow: hidden;
+  }
+  .bolao-row{
+    display:grid; grid-template-columns: 1fr auto auto;
+    gap: 16px; align-items: center;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--divider);
+    transition: background .12s ease;
+  }
+  .bolao-row:last-child{ border-bottom: none; }
+  .bolao-row:hover{ background: var(--bg-soft); }
+  .bolao-row .title{
+    font-weight: 700; color: var(--navy-ink); font-size: 14px;
+  }
+  .bolao-row .sub{
+    font-size: 11px; color: var(--muted); font-weight: 600;
+    margin-top: 2px; letter-spacing: .4px;
+  }
+  .bolao-row .pos{
+    font-size: 12px; font-weight: 800;
+    color: var(--navy);
+    background: var(--navy-soft);
+    padding: 4px 10px; border-radius: 999px;
+  }
+  .bolao-row .pts{
+    font-size: 14px; font-weight: 800;
+    color: var(--gold-dark);
+  }
+
+  /* === Calendário === */
+  .calendar-filters{
+    display:flex; align-items: center; gap: 10px;
+    flex-wrap: wrap;
+    background: #fff;
+    padding: 14px 18px; border-radius: 12px;
+    border: 1px solid var(--divider);
+    margin-bottom: 20px;
+  }
+  .calendar-filters label{
+    font-size: 11px; font-weight: 800;
+    text-transform: uppercase; letter-spacing: .8px;
+    color: var(--muted);
+    margin-right: 4px;
+  }
+  .calendar-filters select, .calendar-filters input{
+    font-family: inherit; font-size: 13px; font-weight: 600;
+    padding: 8px 12px; border-radius: 8px;
+    border: 1px solid var(--border);
+    background: #fff; color: var(--navy-ink);
+    min-width: 140px;
+  }
+  .calendar-filters input{ flex: 1; min-width: 200px; }
+  .calendar-filters select:focus, .calendar-filters input:focus{
+    outline: none; border-color: var(--navy);
+  }
+  .btn-filter-clear{
+    background: transparent; border: none;
+    color: var(--navy); font-weight: 700; cursor: pointer;
+    font-size: 12px; padding: 8px 10px;
+    text-transform: uppercase; letter-spacing: .8px;
+    font-family: inherit;
+  }
+  .btn-filter-clear:hover{ text-decoration: underline; }
+
+  .date-section{ margin-bottom: 28px; }
+  .date-heading{
+    font-size: 14px; font-weight: 800;
+    color: var(--navy); text-transform: uppercase;
+    letter-spacing: 1.4px;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--navy);
+  }
+  .calendar-row{
+    display: grid;
+    grid-template-columns: 110px 90px 1fr 1fr 1fr 220px;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    background: #fff;
+    border-radius: 10px;
+    border: 1px solid var(--divider);
+    margin-bottom: 8px;
+    font-size: 13px;
+    transition: box-shadow .12s ease;
+  }
+  .calendar-row:hover{
+    box-shadow: 0 4px 14px rgba(14,44,110,.1);
+  }
+  .calendar-row .time{
+    font-weight: 800; color: var(--navy); font-size: 14px;
+  }
+  .calendar-row .group{
+    font-size: 11px; font-weight: 800;
+    background: var(--navy-soft);
+    color: var(--navy);
+    padding: 3px 8px; border-radius: 6px;
+    text-align: center;
+    letter-spacing: .4px;
+  }
+  .calendar-row .cal-team{
+    display:flex; align-items: center; gap: 8px;
+    font-weight: 700; color: var(--navy-ink);
+  }
+  .calendar-row .cal-team.right{ justify-content: flex-end; text-align: right; }
+  .calendar-row .cal-team img{
+    width: 26px; height: 20px; border-radius: 3px;
+    object-fit: cover;
+    box-shadow: 0 1px 2px rgba(0,0,0,.15);
+  }
+  .calendar-row .cal-vs{
+    text-align: center; font-weight: 800;
+    color: var(--muted); font-size: 12px;
+  }
+  .calendar-row .cal-venue{
+    font-size: 11px; color: var(--muted); font-weight: 600;
+    text-align: right;
+  }
+  .calendar-empty{
+    text-align: center; padding: 60px 20px;
+    color: var(--muted); font-weight: 600;
+  }
+
+  .stub{
+    background: #fff;
+    border-radius: 14px;
+    padding: 60px 40px;
+    text-align: center;
+    border: 2px dashed var(--border);
+  }
+  .stub .icon-big{
+    width: 72px; height: 72px;
+    display:inline-flex; align-items:center; justify-content:center;
+    background: var(--navy-soft); color: var(--navy);
+    border-radius: 50%;
+    margin-bottom: 16px;
+  }
+  .stub h2{
+    font-size: 20px; font-weight: 800;
+    color: var(--navy); margin-bottom: 8px;
+  }
+  .stub p{
+    font-size: 14px; color: var(--navy-ink); opacity: .75;
+    max-width: 440px; margin: 0 auto 20px;
+    line-height: 1.5;
+  }
+  .stub .btn{
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--navy); color: #fff;
+    padding: 11px 22px; border-radius: 10px;
+    font-weight: 800; letter-spacing: 1px;
+    text-decoration: none; font-size: 13px;
+    border: none; cursor: pointer; font-family: inherit;
+  }
+  .stub .btn:hover{ background: var(--navy-deep); }
+
+  /* ========= MODAL ========= */
+  .modal-backdrop{
+    position: fixed; inset: 0;
+    background: rgba(8, 26, 70, 0.55);
+    display: none;
+    align-items: center; justify-content: center;
+    z-index: 100;
+    padding: 20px;
+  }
+  .modal-backdrop.open{ display: flex; }
+  .modal{
+    background: #fff;
+    border-radius: 14px;
+    padding: 28px;
+    max-width: 440px; width: 100%;
+    box-shadow: 0 30px 60px rgba(0,0,0,.3);
+    animation: modalIn .22s ease;
+  }
+  @keyframes modalIn{
+    from { opacity: 0; transform: translateY(12px) scale(.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .modal h2{
+    font-size: 20px; font-weight: 800; color: var(--navy);
+    margin-bottom: 6px;
+  }
+  .modal .modal-sub{
+    font-size: 13px; color: var(--muted);
+    margin-bottom: 20px;
+  }
+  .modal .form-group{ margin-bottom: 14px; }
+  .modal label{
+    display:block; font-size: 11px; font-weight: 800;
+    letter-spacing: 1px; text-transform: uppercase;
+    color: var(--navy-ink); margin-bottom: 6px;
+  }
+  .modal input[type="text"],
+  .modal input[type="number"]{
+    width: 100%; height: 44px; padding: 0 14px;
+    border: 1.5px solid var(--border); border-radius: 8px;
+    font-family: inherit; font-size: 14px; font-weight: 600;
+    color: var(--navy-ink);
+  }
+  .modal input:focus{
+    outline: none; border-color: var(--navy);
+    box-shadow: 0 0 0 3px rgba(14,44,110,.12);
+  }
+  .radio-row{
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .radio-row label{
+    display:flex; align-items:center; gap: 8px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px; padding: 10px 12px;
+    cursor: pointer; font-size: 13px;
+    letter-spacing: .2px; text-transform: none;
+    font-weight: 700; color: var(--navy-ink);
+    transition: border-color .12s ease, background .12s ease;
+    margin: 0;
+  }
+  .radio-row input[type="radio"]{ accent-color: var(--navy); }
+  .radio-row label:has(input:checked){
+    border-color: var(--navy); background: var(--navy-soft);
+  }
+  .modal-actions{
+    display: flex; gap: 10px; justify-content: flex-end;
+    margin-top: 22px;
+  }
+  .btn-modal{
+    padding: 11px 20px; border-radius: 8px;
+    font-family: inherit; font-weight: 800;
+    font-size: 12px; letter-spacing: 1.2px;
+    text-transform: uppercase; cursor: pointer;
+    border: none;
+  }
+  .btn-modal.secondary{
+    background: transparent; color: var(--navy-ink);
+  }
+  .btn-modal.secondary:hover{ background: var(--bg-soft); }
+  .btn-modal.primary{
+    background: var(--navy); color: #fff;
+  }
+  .btn-modal.primary:hover{ background: var(--navy-deep); }
+
+  .phase-tab{
+    padding: 12px 14px; cursor: pointer;
+    font-family: inherit; font-weight: 700; font-size: 11px;
+    letter-spacing: 1px; text-transform: uppercase;
+    color: var(--navy-ink); background: var(--tab-inactive);
+    border: none; opacity: .6;
+    transition: background .15s ease, opacity .15s ease;
+  }
+  .phase-tab:hover:not(:disabled){ opacity: .9; }
+  .phase-tab:disabled{
+    cursor: not-allowed; opacity: .35; background: #f0f0f0;
+  }
+  .phase-tab.active{ background: #fff; opacity: 1; color: var(--navy); }
+  .phase-tab.locked{ text-decoration: line-through; opacity: .4; }
+  .phase-tab .badge-lock{
+    display:inline-block; margin-left: 4px;
+    font-size: 9px; background: var(--danger); color: #fff;
+    padding: 1px 5px; border-radius: 4px;
+    letter-spacing: .3px; text-transform: uppercase;
+  }
+  
+  /* ========== CRONÔMETRO DE PALPITES ========== */
+  .timer-container{
+    background: linear-gradient(135deg, #FFF8E7 0%, #FFF0D4 100%);
+    border: 2px solid var(--gold);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(226, 176, 69, 0.15);
+  }
+  .timer-container .timer-label{
+    font-size: 13px; font-weight: 700;
+    color: var(--gold-dark); text-transform: uppercase;
+    letter-spacing: 0.8px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .timer-container .timer-label svg{
+    width: 18px; height: 18px; flex-shrink: 0;
+  }
+  .timer-container .timer-value{
+    font-size: 24px; font-weight: 800;
+    color: var(--gold-dark);
+    font-family: 'Courier New', monospace;
+    letter-spacing: 1px;
+  }
+  .timer-container.locked{
+    background: linear-gradient(135deg, #FFE8E8 0%, #FFD4D4 100%);
+    border-color: var(--danger);
+  }
+  .timer-container.locked .timer-label,
+  .timer-container.locked .timer-value{
+    color: var(--danger);
+  }
+
+  .group-heading{
+    font-size: 13px; font-weight: 800; color: var(--navy);
+    text-transform: uppercase; letter-spacing: 1.2px;
+    margin: 18px 0 10px; padding-bottom: 6px;
+    border-bottom: 2px solid var(--navy);
+  }
+  .guess-card{
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: #fff;
+    border: 1px solid var(--divider);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .guess-card.has-guess{ border-color: var(--navy); box-shadow: 0 0 0 1px var(--navy); }
+  .guess-card.locked{ opacity: .55; background: var(--bg-soft); }
+  .guess-card .team-col{
+    display: flex; align-items: center; gap: 8px;
+    font-weight: 700; color: var(--navy-ink); font-size: 13px;
+  }
+  .guess-card .team-col.right{ justify-content: flex-end; text-align: right; }
+  .guess-card .team-col img{
+    width: 26px; height: 20px; border-radius: 3px;
+    object-fit: cover; box-shadow: 0 1px 2px rgba(0,0,0,.15);
+  }
+  .guess-card .score-input{
+    display: flex; align-items: center; gap: 4px;
+  }
+  .guess-card .score-input input{
+    width: 56px; height: 40px;
+    text-align: center; font-size: 16px; font-weight: 800;
+    color: var(--navy); background: var(--bg-soft);
+    border: 1.5px solid var(--border); border-radius: 6px;
+    font-family: inherit;
+  }
+  .guess-card .score-input input::-webkit-outer-spin-button,
+  .guess-card .score-input input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    appearance: none;
+    margin: 0;
+  }
+  .guess-card .score-input input[type=number] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+  .guess-card .score-input input:focus{
+    outline: none; border-color: var(--navy);
+    box-shadow: 0 0 0 3px rgba(14,44,110,.12);
+  }
+  .guess-card .score-input input:disabled{
+    background: var(--divider); cursor: not-allowed;
+  }
+  .guess-card .score-input span.x{ font-weight: 800; color: var(--muted); }
+  .guess-card .meta-row{
+    grid-column: 1 / -1;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 11px; color: var(--muted); font-weight: 600;
+    margin-top: 8px; padding-top: 8px;
+    border-top: 1px dashed var(--divider);
+  }
+  .guess-card .meta-row .pts-badge{
+    color: var(--gold-dark); font-weight: 800;
+  }
+  .guess-card .pen-row{
+    grid-column: 1 / -1;
+    background: #FFF8E7;
+    border: 1px dashed var(--gold);
+    padding: 8px 12px; border-radius: 6px;
+    margin-top: 8px;
+    font-size: 11px; font-weight: 700; color: var(--gold-dark);
+    display: flex; align-items: center; gap: 10px;
+    flex-wrap: wrap;
+  }
+  .guess-card .pen-row label{
+    display: inline-flex; align-items: center; gap: 4px;
+    cursor: pointer; font-size: 11px;
+    text-transform: uppercase; letter-spacing: .5px;
+  }
+  .guess-card .pen-row input[type="radio"]{ accent-color: var(--navy); }
+  .lock-banner{
+    background: #FFE8E8; border: 1px solid var(--danger);
+    color: var(--danger); padding: 10px 14px; border-radius: 8px;
+    font-weight: 700; font-size: 12px; margin-bottom: 14px;
+    text-transform: uppercase; letter-spacing: .6px;
+  }
+  .save-feedback{
+    display: inline-block; font-size: 11px; font-weight: 700;
+    color: var(--success); margin-left: 8px;
+    opacity: 0; transition: opacity .2s ease;
+  }
+  .save-feedback.show{ opacity: 1; }
+
+  /* ========== NOTIFICAÇÕES ========== */
+  .notif-bell{
+    position: relative;
+    background: rgba(255,255,255,.08);
+    border: none; color: #fff;
+    width: 38px; height: 38px; border-radius: 50%;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s ease;
+  }
+  .notif-bell:hover{ background: rgba(255,255,255,.16); }
+  .notif-badge{
+    position: absolute; top: -2px; right: -2px;
+    background: var(--danger); color: #fff;
+    font-size: 10px; font-weight: 800;
+    min-width: 18px; height: 18px; border-radius: 999px;
+    padding: 0 5px;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid var(--navy);
+  }
+  .notif-dropdown{
+    position: fixed; top: calc(var(--topbar-h) + 8px); right: 22px;
+    width: 380px; max-height: 480px;
+    background: #fff; border-radius: 12px;
+    box-shadow: 0 20px 50px rgba(0,0,0,.25);
+    z-index: 60; overflow: hidden;
+    display: none; flex-direction: column;
+  }
+  .notif-dropdown.open{ display: flex; }
+  .notif-header{
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 18px; border-bottom: 1px solid var(--divider);
+    background: var(--bg-soft);
+  }
+  .notif-header h3{
+    font-size: 14px; font-weight: 800; color: var(--navy);
+    letter-spacing: .5px; text-transform: uppercase;
+  }
+  .notif-header button{
+    background: transparent; border: none;
+    color: var(--navy); font-size: 11px; font-weight: 700;
+    letter-spacing: .6px; text-transform: uppercase;
+    cursor: pointer; font-family: inherit;
+  }
+  .notif-header button:hover{ text-decoration: underline; }
+  .notif-list{ overflow-y: auto; flex: 1; }
+  .notif-item{
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--divider);
+    cursor: pointer;
+    transition: background .12s ease;
+    position: relative;
+  }
+  .notif-item:hover{ background: var(--bg-soft); }
+  .notif-item.unread{ background: #F0F4FF; }
+  .notif-item.unread::before{
+    content: ""; position: absolute; left: 6px; top: 20px;
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--navy);
+  }
+  .notif-item .notif-title{
+    font-size: 13px; font-weight: 800; color: var(--navy-ink);
+    margin-bottom: 4px;
+  }
+  .notif-item .notif-body{
+    font-size: 12px; color: var(--muted); line-height: 1.4;
+    margin-bottom: 8px;
+  }
+  .notif-item .notif-time{
+    font-size: 10px; color: var(--muted); font-weight: 600;
+    letter-spacing: .4px; text-transform: uppercase;
+  }
+  .notif-item .notif-actions{
+    display: flex; gap: 6px; margin-top: 8px;
+  }
+  .notif-item .notif-actions button{
+    font-family: inherit; font-size: 11px; font-weight: 700;
+    padding: 5px 10px; border-radius: 6px; cursor: pointer;
+    border: none; letter-spacing: .3px;
+  }
+  .notif-item .btn-accept{
+    background: var(--success); color: #fff;
+  }
+  .notif-item .btn-reject{
+    background: transparent; color: var(--danger);
+    border: 1px solid var(--danger);
+  }
+  .notif-empty{
+    padding: 40px 20px; text-align: center;
+    color: var(--muted); font-size: 13px;
+  }
+
+  /* ========== ABAS DENTRO DE MEUS TORNEIOS ========== */
+  .sub-tabs{
+    display: flex; gap: 4px; margin-bottom: 20px;
+    border-bottom: 1px solid var(--divider);
+  }
+  .sub-tab{
+    padding: 10px 18px; cursor: pointer;
+    font-family: inherit; font-weight: 700; font-size: 12px;
+    letter-spacing: .8px; text-transform: uppercase;
+    color: var(--muted); background: transparent; border: none;
+    border-bottom: 2px solid transparent;
+    transition: color .15s ease, border-color .15s ease;
+  }
+  .sub-tab:hover{ color: var(--navy-ink); }
+  .sub-tab.active{ color: var(--navy); border-bottom-color: var(--navy); }
+  .sub-tab .count-pill{
+    display: inline-block; margin-left: 6px;
+    background: var(--navy); color: #fff;
+    font-size: 10px; font-weight: 800;
+    padding: 2px 7px; border-radius: 999px;
+  }
+
+  /* ========== BUSCA DE BOLÕES ========== */
+  .search-box{
+    display: flex; gap: 10px; margin-bottom: 16px;
+  }
+  .search-box input{
+    flex: 1; height: 44px; padding: 0 16px;
+    border: 1.5px solid var(--border); border-radius: 10px;
+    font-family: inherit; font-size: 14px; font-weight: 600;
+    color: var(--navy-ink);
+  }
+  .search-box input:focus{
+    outline: none; border-color: var(--navy);
+    box-shadow: 0 0 0 3px rgba(14,44,110,.12);
+  }
+  .search-result{
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center; gap: 14px;
+    padding: 14px 18px;
+    background: #fff; border: 1px solid var(--divider);
+    border-radius: 10px; margin-bottom: 8px;
+  }
+  .search-result .name{ font-weight: 800; color: var(--navy-ink); font-size: 14px; }
+  .search-result .meta{
+    font-size: 11px; color: var(--muted); font-weight: 600;
+    margin-top: 2px; letter-spacing: .4px;
+  }
+  .search-result .vis-badge{
+    display: inline-block; padding: 2px 8px; border-radius: 4px;
+    font-size: 10px; font-weight: 800; letter-spacing: .6px;
+    margin-right: 8px;
+  }
+  .vis-public{ background: #E6F7ED; color: var(--success); }
+  .vis-private{ background: #FFF0E0; color: #C97A00; }
+  
+  /* ========= RESPONSIVO ========= */
+  @media (max-width: 900px){
+    .sidebar{
+      transform: translateX(-100%);
+      transition: transform .2s ease;
+    }
+    .sidebar.open{ transform: translateX(0); }
+    .main{ padding-left: 24px; padding-right: 24px; }
+    .matches-grid{ grid-template-columns: 1fr; }
+    .cta-grid{ grid-template-columns: 1fr; }
+    .calendar-row{
+      grid-template-columns: 80px 1fr 1fr 1fr;
+    }
+    .calendar-row .cal-venue, .calendar-row .group{ display: none; }
+  }
+
+  .toast{
+    position: fixed; bottom: 22px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--navy-deep); color: #fff;
+    padding: 12px 20px; border-radius: 10px;
+    font-weight: 700; font-size: 13px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.3);
+    opacity: 0; pointer-events: none;
+    transition: opacity .2s ease, transform .2s ease;
+    z-index: 200;
+  }
+  .toast.show{ opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .skeleton{
+    background: linear-gradient(90deg, var(--divider) 25%, var(--bg-soft) 50%, var(--divider) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.2s infinite;
+    border-radius: 4px;
+  }
+  @keyframes shimmer{
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <img src="/static/logo-copa2026.png" alt="Copa 2026" class="logo-cup" />
+    <span>Bolão<em>26</em></span>
+  </div>
+  <div class="topbar-right">
+    <button class="notif-bell" id="notifBell" title="Notificações" aria-label="Notificações">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+      </svg>
+      <span class="notif-badge" id="notifBadge" hidden>0</span>
+    </button>
+    <div class="user-chip" id="userChip">
+      <div class="avatar">R</div>
+      <div class="name">Raf</div>
+    </div>
+    <button class="logout" onclick="window.location.href='/'">SAIR</button>
+  </div>
+</header>
+
+<aside class="sidebar" id="sidebar">
+  <div class="nav-group-title">Menu</div>
+
+  <button class="nav-item active" data-tab="home">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+      <polyline points="9 22 9 12 15 12 15 22"/>
+    </svg>
+    Home
+  </button>
+
+  <button class="nav-item" data-tab="torneios">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+      <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+      <path d="M4 22h16"/>
+      <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
+      <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
+      <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+    </svg>
+    Meus Torneios
+    <span class="badge" id="sidebarTournamentBadge">0</span>
+  </button>
+
+  <button class="nav-item" data-tab="calendario">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+      <line x1="16" y1="2" x2="16" y2="6"/>
+      <line x1="8" y1="2" x2="8" y2="6"/>
+      <line x1="3" y1="10" x2="21" y2="10"/>
+    </svg>
+    Calendário
+  </button>
+
+  <button class="nav-item" data-tab="simulador">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+    </svg>
+    Simulador
+  </button>
+</aside>
+
+<main class="main">
+
+  <section class="tab-panel" data-panel="home">
+    <h1 class="page-title">Olá, Raf 👋</h1>
+    <p class="page-subtitle">Acompanhe os próximos jogos, crie bolões e convide seus amigos.</p>
+
+    <div class="section">
+      <div class="section-header">
+        <h2 class="section-title">Próximos Jogos</h2>
+        <button class="section-link" data-goto-tab="calendario">Ver calendário completo</button>
+      </div>
+      <div class="matches-grid" id="upcomingMatches">
+        <div class="match-card"><div class="skeleton" style="height:140px"></div></div>
+        <div class="match-card"><div class="skeleton" style="height:140px"></div></div>
+        <div class="match-card"><div class="skeleton" style="height:140px"></div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><h2 class="section-title">Bolões</h2></div>
+      <div class="cta-grid">
+        <button class="cta-card cta-primary" data-open-modal="create">
+          <div class="icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+          </div>
+          <h3>Criar Bolão</h3>
+          <p>Configure seu torneio, defina regras e convide amigos em segundos.</p>
+          <span class="arrow">→</span>
+        </button>
+
+        <button class="cta-card cta-secondary" data-open-modal="join">
+          <div class="icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+              <polyline points="10 17 15 12 10 7"/>
+              <line x1="15" y1="12" x2="3" y2="12"/>
+            </svg>
+          </div>
+          <h3>Entrar em Bolão</h3>
+          <p>Tem um código de convite? Entre em um bolão de amigos agora.</p>
+          <span class="arrow">→</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <h2 class="section-title">Meus Bolões</h2>
+        <button class="section-link" data-goto-tab="torneios">Ver todos</button>
+      </div>
+      <div class="bolao-list" id="homeBolaoList">
+         <div class="bolao-row"><div class="skeleton" style="height:60px; width:100%"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tab-panel" data-panel="torneios" hidden>
+    
+    <div id="torneiosListContainer">
+      <h1 class="page-title">Meus Torneios</h1>
+      <p class="page-subtitle">Gerencie seus bolões, solicitações e descubra novos.</p>
+
+      <div class="sub-tabs">
+        <button class="sub-tab active" data-subtab="mine">Meus Bolões <span class="count-pill" id="mineCount">0</span></button>
+        <button class="sub-tab" data-subtab="discover">Descobrir</button>
+        <button class="sub-tab" data-subtab="requests">Solicitações <span class="count-pill" id="reqCount" hidden>0</span></button>
+      </div>
+
+      <div data-subpanel="mine"></div>
+      <div data-subpanel="discover" hidden></div>
+      <div data-subpanel="requests" hidden></div>
+    </div>
+
+    <div id="bolaoDetailContainer" hidden>
+      <button id="btnBackToBoloes" class="btn-filter-clear" style="margin-bottom: 16px; padding: 0; font-size: 13px;">← Voltar para lista</button>
+
+      <div class="bolao-header" style="background:#fff; padding:20px 24px; border-radius:12px; border:1px solid var(--divider); margin-bottom:24px; box-shadow: 0 4px 12px rgba(14,44,110,.04);">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap: 16px;">
+          <div>
+            <h2 id="detailBolaoTitle" style="font-size:24px; font-weight:800; color:var(--navy); margin-bottom:8px; letter-spacing:-0.5px;">Título</h2>
+            <p id="detailBolaoDesc" style="font-size:13px; color:var(--navy-ink); opacity:0.8; line-height:1.5; max-width:600px;">Descrição...</p>
+          </div>
+          <div style="display:flex; gap: 8px; align-items:flex-start;">
+            <button class="btn-modal secondary" id="btnInviteDetail" style="font-size:12px; white-space:nowrap; padding: 10px 16px;">
+              Convidar
+            </button>
+            <button class="btn-modal secondary" id="btnDeleteBolao" style="font-size:12px; white-space:nowrap; padding: 10px 16px; color:var(--danger); border-color:var(--danger);">
+              Deletar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="sub-tabs" style="margin-bottom: 24px;">
+        <button class="sub-tab active" data-bolao-tab="palpites">Meus Palpites</button>
+        <button class="sub-tab" data-bolao-tab="ranking">Ranking</button>
+      </div>
+
+      <div data-bolao-panel="palpites">
+        <div id="timerContainer" class="timer-container" hidden>
+          <div class="timer-label">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;"><circle cx="12" cy="12" r="9"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            Tempo restante
+          </div>
+          <div class="timer-value" id="timerValue">—</div>
+        </div>
+
+        <div class="auth-tabs" id="phaseTabs" style="margin-bottom: 20px; border-radius: 10px; overflow:hidden;"></div>
+        
+        <div id="phaseContent">
+          <div class="calendar-empty">Carregando…</div>
+        </div>
+      </div>
+
+      <div data-bolao-panel="ranking" hidden>
+        <div id="rankingContainer"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tab-panel" data-panel="calendario" hidden>
+    <h1 class="page-title">Calendário da Copa 2026</h1>
+    <p class="page-subtitle">Todos os 104 jogos — fase de grupos e mata-mata — em horário de Brasília.</p>
+
+    <div class="calendar-filters">
+      <label>Grupo</label>
+      <select id="filterGroup">
+        <option value="">Todos</option>
+      </select>
+
+      <label>Buscar seleção</label>
+      <input type="text" id="filterTeam" placeholder="Ex: Brasil, Argentina..." />
+
+      <button class="btn-filter-clear" id="btnClearFilters">Limpar</button>
+    </div>
+
+    <div id="calendarContent">
+      <div class="calendar-empty">Carregando jogos…</div>
+    </div>
+  </section>
+
+  <section class="tab-panel" data-panel="simulador" hidden>
+    <h1 class="page-title">Simulador</h1>
+    <p class="page-subtitle">Simule cenários do torneio e veja probabilidades em tempo real.</p>
+
+    <div class="stub">
+      <div class="icon-big">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+        </svg>
+      </div>
+      <h2>Em breve</h2>
+      <p>Escolha vencedores hipotéticos, monte cenários do mata-mata e veja como sua seleção pode chegar na final.</p>
+    </div>
+  </section>
+
+</main>
+
+<div class="modal-backdrop" id="modalCreate">
+  <div class="modal">
+    <h2>Criar novo bolão</h2>
+    <p class="modal-sub">Configure as regras e compartilhe o código de convite.</p>
+    <form id="formCreate" novalidate>
+      <div class="form-group">
+        <label>Nome do bolão</label>
+        <input type="text" name="name" placeholder="Ex: Bolão da firma" required />
+      </div>
+      <div class="form-group">
+        <label>Descrição</label>
+        <input type="text" name="description" placeholder="Ex: Torneio da família" />
+      </div>
+      <div class="form-group">
+        <label>Seu codinome</label>
+        <input type="text" name="codinome" placeholder="Ex: Roger Machado" required />
+      </div>
+      <div class="form-group">
+        <label>Tipo</label>
+        <div class="radio-row">
+          <label><input type="radio" name="visibility" value="private" checked /> Privado</label>
+          <label><input type="radio" name="visibility" value="public" /> Público</label>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-modal secondary" data-close-modal>Cancelar</button>
+        <button type="submit" class="btn-modal primary">Criar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modalJoin">
+  <div class="modal">
+    <h2>Entrar em um bolão</h2>
+    <p class="modal-sub">Insira o código de convite que você recebeu.</p>
+    <form id="formJoin" novalidate>
+      <div class="form-group">
+        <label>Código de convite</label>
+        <input type="text" name="code" placeholder="Ex: COPA-A2X9" required />
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-modal secondary" data-close-modal>Cancelar</button>
+        <button type="submit" class="btn-modal primary">Entrar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   AUTH GUARD
+   ============================================================ */
+const TOKEN = localStorage.getItem('bolao_token');
+if (!TOKEN){
+  window.location.href = '/';
+}
+
+async function authFetch(url, options = {}){
+  const headers = {
+    ...(options.headers || {}),
+    'Authorization': `Bearer ${TOKEN}`,
+  };
+  if (options.body && !(options.body instanceof URLSearchParams) && !headers['Content-Type']){
+    headers['Content-Type'] = 'application/json';
+  }
+  const r = await fetch(url, { ...options, headers });
+  if (r.status === 401){
+    localStorage.removeItem('bolao_token');
+    window.location.href = '/';
+    throw new Error('Sessão expirada.');
+  }
+  return r;
+}
+
+/* ============================================================
+   User Profile
+   ============================================================ */
+(async function loadMe(){
+  try {
+    const r = await authFetch('/auth/me');
+    if (!r.ok) throw new Error('Falha ao carregar perfil');
+    const user = await r.json();
+    const firstName = user.full_name.split(' ')[0];
+    document.querySelectorAll('.user-chip .name').forEach(el => el.textContent = firstName);
+    document.querySelectorAll('.user-chip .avatar').forEach(el => el.textContent = firstName[0].toUpperCase());
+    document.querySelectorAll('.page-title').forEach(el => {
+        if(el.textContent.includes('Olá')) el.textContent = `Olá, ${firstName} 👋`;
+    });
+  } catch(err){ console.warn(err); }
+})();
+
+/* ============================================================
+   Logout
+   ============================================================ */
+document.querySelector('.logout').addEventListener('click', () => {
+  localStorage.removeItem('bolao_token');
+  window.location.href = '/';
+});
+
+/* ============================================================
+   Navigation
+   ============================================================ */
+const tabButtons = document.querySelectorAll('.nav-item');
+const panels = document.querySelectorAll('.tab-panel');
+
+function activateTab(name){
+  tabButtons.forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  panels.forEach(p => { p.hidden = (p.dataset.panel !== name); });
+  
+  // Reset view do bolão quando mudar de aba ou clicar em "Torneios"
+  if (name === 'torneios') {
+      document.getElementById('torneiosListContainer').hidden = false;
+      document.getElementById('bolaoDetailContainer').hidden = true;
+      stopTimerUpdate();
+      loadMyBoloes();
+  }
+
+  if (name === 'calendario' && !calendarLoaded) loadCalendar();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+tabButtons.forEach(b => b.addEventListener('click', () => activateTab(b.dataset.tab)));
+document.querySelectorAll('[data-goto-tab]').forEach(el => {
+  el.addEventListener('click', () => activateTab(el.dataset.gotoTab));
+});
+
+/* ============================================================
+   Utils
+   ============================================================ */
+const WEEKDAYS_PT = ['domingo','segunda','terça','quarta','quinta','sexta','sábado'];
+const MONTHS_PT   = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+
+function formatMatchDateTime(isoBrt){
+  if (!isoBrt) return { date: '—', time: '—', full: '—' };
+  const d = new Date(isoBrt);
+  const weekday = WEEKDAYS_PT[d.getDay()];
+  const day = d.getDate();
+  const month = MONTHS_PT[d.getMonth()];
+  const hh = String(d.getHours()).padStart(2,'0');
+  const mm = String(d.getMinutes()).padStart(2,'0');
+  return {
+    date: `${weekday}, ${day} de ${month}`,
+    time: `${hh}:${mm}`,
+    full: `${weekday.toUpperCase()}, ${day} ${month.toUpperCase()} · ${hh}:${mm}`,
+    dateKey: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`,
+  };
+}
+
+function teamBlock(team){
+  const flag = team.flag_url
+    ? `<div class="flag-wrap"><img src="${team.flag_url}" alt="${team.name_pt}" loading="lazy"/></div>`
+    : `<div class="flag-wrap placeholder">?</div>`;
+  return `${flag}<div class="name">${team.name_pt}</div>`;
+}
+
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ============================================================
+   Home: Upcoming Matches
+   ============================================================ */
+async function loadUpcoming(){
+  const grid = document.getElementById('upcomingMatches');
+  try {
+    const r = await fetch('/api/matches/upcoming?limit=3');
+    if (!r.ok) throw new Error('API error');
+    const data = await r.json();
+    const matches = data.matches || [];
+    if (!matches.length){
+      grid.innerHTML = `<div class="calendar-empty" style="grid-column: 1 / -1;">Nenhum jogo próximo.</div>`;
+      return;
+    }
+    grid.innerHTML = matches.map(m => {
+      const t = formatMatchDateTime(m.datetime_brt);
+      return `
+        <div class="match-card">
+          <div class="match-meta-top">
+            <span class="match-group">${m.group || '—'}</span>
+            <span class="match-round">${m.round || ''}</span>
+          </div>
+          <div class="match-teams">
+            <div class="team">${teamBlock(m.team1)}</div>
+            <div class="vs">VS</div>
+            <div class="team">${teamBlock(m.team2)}</div>
+          </div>
+          <div class="match-meta-bot">
+            <span class="datetime">${t.full}</span>
+            <span class="venue">📍 ${m.ground}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch(err){ grid.innerHTML = `<div class="calendar-empty">Erro ao carregar jogos.</div>`; }
+}
+
+/* ============================================================
+   Boloes Logic
+   ============================================================ */
+async function loadMyBoloes(){
+  try {
+    const r = await authFetch('/boloes/me');
+    if (!r.ok) throw new Error('API error');
+    const boloes = await r.json();
+
+    // Sidebar Badge
+    const badge = document.getElementById('sidebarTournamentBadge');
+    if(badge) badge.textContent = boloes.length;
+
+    // Home Preview
+    const preview = document.getElementById('homeBolaoList');
+    if (preview){
+      if (!boloes.length){
+        preview.innerHTML = `<div class="bolao-row"><div><div class="title">Nenhum bolão ainda</div></div></div>`;
+      } else {
+        preview.innerHTML = boloes.slice(0, 3).map(b => `
+          <div class="bolao-row" style="cursor:pointer" onclick="activateTab('torneios'); openBolaoDetail(${b.id}, '${escapeHtml(b.name)}', '${b.invite_code}', '${escapeHtml(b.description || 'Sem descrição disponível.')}')">
+            <div>
+              <div class="title">${escapeHtml(b.name)}</div>
+              <div class="sub">${b.members_count} PARTICIPANTES · ${b.visibility.toUpperCase()}</div>
+            </div>
+            <div class="pos" style="background:transparent; font-size:18px; color:var(--muted);">→</div>
+          </div>
+        `).join('');
+      }
+    }
+
+    // List View
+    const torneiosPanel = document.querySelector('[data-panel="torneios"]');
+    if (torneiosPanel){
+      const mCount = document.getElementById('mineCount');
+      if(mCount) mCount.textContent = boloes.length;
+      renderMyBoloesList(boloes);
+      
+      // Bindings (uma vez)
+      if(!torneiosPanel.dataset.bound){
+          torneiosPanel.querySelectorAll('.sub-tab[data-subtab]').forEach(tab => {
+            tab.addEventListener('click', () => {
+              torneiosPanel.querySelectorAll('.sub-tab').forEach(t => t.classList.toggle('active', t === tab));
+              torneiosPanel.querySelectorAll('[data-subpanel]').forEach(p => p.hidden = (p.dataset.subpanel !== tab.dataset.subtab));
+              if (tab.dataset.subtab === 'discover') renderDiscoverPanel();
+              if (tab.dataset.subtab === 'requests') loadIncomingRequests();
+            });
+          });
+          torneiosPanel.dataset.bound = "1";
+      }
+    }
+  } catch(err){ console.warn(err); }
+}
+
+function renderMyBoloesList(boloes){
+  const panel = document.querySelector('[data-subpanel="mine"]');
+  if (!panel) return;
+  if (!boloes.length){
+    panel.innerHTML = `<div class="stub"><h2>Nenhum bolão</h2><p>Crie ou procure um.</p></div>`;
+    return;
+  }
+  panel.innerHTML = `
+    <div class="bolao-list">
+      ${boloes.map(b => `
+        <div class="bolao-row" style="cursor:pointer;" onclick="openBolaoDetail(${b.id}, '${escapeHtml(b.name)}', '${b.invite_code}', '${escapeHtml(b.description || 'Sem descrição disponível.')}')">
+          <div>
+            <div class="title">${escapeHtml(b.name)}</div>
+            <div class="sub">${b.members_count} PARTICIPANTES · ${b.visibility.toUpperCase()} · CÓDIGO: ${b.invite_code}</div>
+          </div>
+          <div class="pos" style="background:transparent; font-size:18px; color:var(--muted);">→</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+/* ============================================================
+   Bolão Detail View (Drill-down)
+   ============================================================ */
+function openBolaoDetail(id, name, inviteCode, description) {
+  document.getElementById('torneiosListContainer').hidden = true;
+  document.getElementById('bolaoDetailContainer').hidden = false;
+
+  document.getElementById('detailBolaoTitle').textContent = name;
+  document.getElementById('detailBolaoDesc').textContent = description;
+
+  // Armazena o ID do bolão para usar no botão de deletar
+  window.currentBolaoId = id;
+
+  const btnInvite = document.getElementById('btnInviteDetail');
+  btnInvite.onclick = () => openInviteModal(name, inviteCode);
+
+  const btnDelete = document.getElementById('btnDeleteBolao');
+  btnDelete.onclick = () => deleteBolao(id, name);
+
+  activateBolaoTab('palpites');
+  loadBolaoGuesses(id);
+  loadRanking(id, name);
+  
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+document.getElementById('btnBackToBoloes').addEventListener('click', () => {
+  document.getElementById('torneiosListContainer').hidden = false;
+  document.getElementById('bolaoDetailContainer').hidden = true;
+  stopTimerUpdate();
+});
+
+document.querySelectorAll('[data-bolao-tab]').forEach(btn => {
+  btn.addEventListener('click', () => activateBolaoTab(btn.dataset.bolaoTab));
+});
+
+async function deleteBolao(bolaoId, bolaoName) {
+  const confirmed = confirm(`Tem certeza que deseja deletar "${bolaoName}"? Esta ação não pode ser desfeita.`);
+  if (!confirmed) return;
+
+  try {
+    const r = await authFetch(`/boloes/${bolaoId}`, { method: 'DELETE' });
+    if (!r.ok) {
+      const errorData = await r.json().catch(() => ({}));
+      throw new Error(errorData.detail || 'Erro ao deletar bolão');
+    }
+    showToast('Bolão deletado com sucesso!');
+    
+    // Volta pra lista de bolões
+    document.getElementById('torneiosListContainer').hidden = false;
+    document.getElementById('bolaoDetailContainer').hidden = true;
+    
+    // Recarrega a lista
+    loadMyBoloes();
+  } catch(err) {
+    alert(`Erro ao deletar: ${err.message}`);
+  }
+}
+
+function activateBolaoTab(tabName) {
+  document.querySelectorAll('[data-bolao-tab]').forEach(b => b.classList.toggle('active', b.dataset.bolaoTab === tabName));
+  document.querySelectorAll('[data-bolao-panel]').forEach(p => p.hidden = (p.dataset.bolaoPanel !== tabName));
+}
+
+async function loadRanking(bolaoId, bolaoName){
+  const container = document.getElementById('rankingContainer');
+  if (!container) return;
+  container.innerHTML = `<div class="calendar-empty">Carregando ranking…</div>`;
+  try {
+    const r = await authFetch(`/boloes/${bolaoId}/ranking`);
+    if (!r.ok) throw new Error('Erro ao carregar ranking');
+    const rows = await r.json();
+    // ALTERAÇÃO OPCIONAL: Título removido daqui pois já está no topo da tela
+    container.innerHTML = `
+      <div class="bolao-list">
+        ${rows.map(row => `
+          <div class="bolao-row">
+            <div>
+              <div class="title">${row.position}º · ${row.codinome}</div>
+              <div class="sub">${row.guesses_count} palpite(s) registrado(s)</div>
+            </div>
+            <div class="pts">${row.total_points} pts</div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  } catch(err){ container.innerHTML = `<div class="calendar-empty">Erro: ${err.message}</div>`; }
+}
+
+/* ============================================================
+   Guesses Core
+   ============================================================ */
+let _guessState = { bolaoId: null, data: null, activePhase: null, saveTimers: {}, timerInterval: null };
+const PHASE_LABELS = { groups:'Grupos', r32:'16 avos', r16:'Oitavas', qf:'Quartas', sf:'Semi', third:'3º Lugar', final:'Final' };
+const PHASE_ORDER = ['groups', 'r32', 'r16', 'qf', 'sf', 'third', 'final'];
+const KNOCKOUT_PHASES = new Set(['r32', 'r16', 'qf', 'sf', 'third', 'final']);
+
+async function loadBolaoGuesses(bolaoId){
+  _guessState.bolaoId = bolaoId;
+  const content = document.getElementById('phaseContent');
+  content.innerHTML = `<div class="calendar-empty">Carregando palpites…</div>`;
+
+  try {
+    const r = await authFetch(`/boloes/${bolaoId}/guesses/guessable`);
+    if (!r.ok) throw new Error('Erro ao carregar jogos');
+    _guessState.data = await r.json();
+
+    let activePhase = 'groups';
+    for (const p of PHASE_ORDER) {
+      const info = _guessState.data.phases[p];
+      if (info && info.can_guess && !info.is_locked) { activePhase = p; break; }
+    }
+    _guessState.activePhase = activePhase;
+
+    renderPhaseTabs();
+    renderPhaseContent();
+    startTimerUpdate();
+  } catch(err){ content.innerHTML = `<div class="calendar-empty">Erro: ${err.message}</div>`; }
+}
+
+function renderPhaseTabs(){
+  const tabs = document.getElementById('phaseTabs');
+  const phases = _guessState.data.phases;
+  tabs.innerHTML = PHASE_ORDER.map(p => {
+    const info = phases[p];
+    if (!info || (info.matches_count === 0 && !info.groups && !info.matches)) return '';
+    const isActive = _guessState.activePhase === p;
+    const isLocked = info.is_locked;
+    const canGuess = info.can_guess;
+    const badge = isLocked ? '<span class="badge-lock">fechado</span>' : (!canGuess ? '<span class="badge-lock" style="background:var(--muted)">breve</span>' : '');
+    
+    return `<button class="phase-tab ${isActive?'active':''} ${isLocked?'locked':''}" data-phase="${p}">${PHASE_LABELS[p]}${badge}</button>`;
+  }).join('');
+
+  tabs.querySelectorAll('[data-phase]').forEach(btn => {
+    btn.onclick = () => {
+      _guessState.activePhase = btn.dataset.phase;
+      renderPhaseTabs();
+      renderPhaseContent();
+      updateTimerDisplay();
+    };
+  });
+}
+
+function renderPhaseContent(){
+  const container = document.getElementById('phaseContent');
+  const phaseData = _guessState.data.phases[_guessState.activePhase];
+  const myGuesses = _guessState.data.my_guesses;
+
+  if (!phaseData || (!phaseData.can_guess && !phaseData.is_locked)) {
+    container.innerHTML = `<div class="lock-banner" style="background:#E8F4FF; color:var(--navy);">⏰ Palpites abrem em breve.</div>`;
+    return;
+  }
+
+  const lockBanner = phaseData.is_locked ? `<div class="lock-banner">🔒 Palpites encerrados.</div>` : '';
+  let body = '';
+
+  if (_guessState.activePhase === 'groups' && phaseData.groups){
+    body = Object.keys(phaseData.groups).sort().map(g => `
+      <div class="group-heading">${g}</div>
+      ${phaseData.groups[g].map(m => renderGuessCard(m, myGuesses[m.id], phaseData.is_locked, _guessState.activePhase)).join('')}
+    `).join('');
+  } else if (phaseData.matches){
+    body = phaseData.matches.map(m => renderGuessCard(m, myGuesses[m.id], phaseData.is_locked, _guessState.activePhase)).join('');
+  }
+
+  container.innerHTML = lockBanner + body;
+  bindGuessInputs();
+}
+
+function renderGuessCard(match, myGuess, phaseLocked, phaseKey){
+  const g = myGuess || { score1: '', score2: '', pen_winner: 0, points: 0, locked: false };
+  const isKnockout = KNOCKOUT_PHASES.has(phaseKey);
+  const disabled = phaseLocked || g.locked;
+  const hasGuess = myGuess && myGuess.score1 !== '' && myGuess.score1 !== null;
+  const t1 = match.team1, t2 = match.team2;
+  const flag = (t) => t.flag_url ? `<img src="${t.flag_url}" alt="${t.name_pt}" loading="lazy">` : '';
+  
+  // --- INÍCIO DA MUDANÇA ---
+  // 1. Procura se o admin injetou resultado para este jogo
+  const official = _guessState.data.official_results && _guessState.data.official_results[match.id];
+  
+  // 2. Decide qual placar usar: o do Admin (prioridade) ou o da API Externa
+  const realScore1 = official ? official.score1 : match.score1;
+  const realScore2 = official ? official.score2 : match.score2;
+
+  // 3. Verifica se acabou baseado no placar real que escolhemos
+  const isFinished = realScore1 !== null && realScore1 !== undefined;
+  // --- FIM DA MUDANÇA ---
+
+  if (isFinished) {
+    const guessSummary = hasGuess
+      ? `Seu palpite: ${g.score1} x ${g.score2} - ${g.points} pts`
+      : `Você não enviou palpite para este jogo.`;
+
+    return `
+      <div class="guess-card locked" data-match-id="${match.id}">
+        <div class="team-col">${flag(t1)}<span>${t1.name_pt}</span></div>
+        
+        <div class="score-input" style="gap: 12px; justify-content:center; border:none; background:transparent;">
+          <span style="font-size: 22px; font-weight: 800; color: var(--navy);">${realScore1}</span>
+          <span class="x">×</span>
+          <span style="font-size: 22px; font-weight: 800; color: var(--navy);">${realScore2}</span>
+        </div>
+        
+        <div class="team-col right"><span>${t2.name_pt}</span>${flag(t2)}</div>
+
+        <div class="meta-row" style="flex-direction:column; align-items:center; gap:6px; background:var(--bg-soft); padding:10px; border-radius:8px; margin-top:12px; border:none;">
+          <div style="font-size:10px; color:var(--navy-ink); font-weight:800; text-transform:uppercase; opacity:0.6;">Resultado Oficial</div>
+          <div style="font-size:13px; color:var(--navy-ink); font-weight:600;">${guessSummary}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  const dateTxt = formatMatchDateTime(match.datetime_brt);
+  const penRow = isKnockout ? `
+    <div class="pen-row" data-pen-row data-match-id="${match.id}" style="display: none;">
+      <span>Quem vence nos pênaltis?</span>
+      <label><input type="radio" name="pen_${match.id}" value="1" ${g.pen_winner===1?'checked':''} ${disabled?'disabled':''}> ${t1.name_pt}</label>
+      <label><input type="radio" name="pen_${match.id}" value="2" ${g.pen_winner===2?'checked':''} ${disabled?'disabled':''}> ${t2.name_pt}</label>
+    </div>` : '';
+
+  return `
+    <div class="guess-card ${hasGuess?'has-guess':''} ${disabled?'locked':''}" data-match-id="${match.id}">
+      <div class="team-col">${flag(t1)}<span>${t1.name_pt}</span></div>
+      <div class="score-input">
+        <input type="number" value="${g.score1??''}" data-score="1" data-match-id="${match.id}" ${disabled?'disabled':''}>
+        <span class="x">×</span>
+        <input type="number" value="${g.score2??''}" data-score="2" data-match-id="${match.id}" ${disabled?'disabled':''}>
+      </div>
+      <div class="team-col right"><span>${t2.name_pt}</span>${flag(t2)}</div>
+      ${penRow}
+      <div class="meta-row">
+        <span>${dateTxt.full}</span>
+        <span>${g.points>0?`<span class="pts-badge">${g.points} pts</span>`:''} <span class="save-feedback" data-feedback="${match.id}">✓ salvo</span></span>
+      </div>
+    </div>
+  `;
+}
+
+function bindGuessInputs(){
+  document.querySelectorAll('#phaseContent input[type="number"]').forEach(inp => {
+    inp.oninput = (e) => {
+        let v = e.target.value.replace(/[^0-9]/g, '');
+        if(v && parseInt(v)>99) v='99';
+        e.target.value = v;
+        updatePenRowVisibility(e.target.dataset.matchId);
+        scheduleSave(e.target.dataset.matchId);
+    };
+  });
+  document.querySelectorAll('#phaseContent input[type="radio"]').forEach(r => {
+    r.onchange = () => scheduleSave(r.name.replace('pen_', ''));
+  });
+  document.querySelectorAll('[data-pen-row]').forEach(row => updatePenRowVisibility(row.dataset.matchId));
+}
+
+function updatePenRowVisibility(mid){
+  const card = document.querySelector(`.guess-card[data-match-id="${mid}"]`);
+  if (!card) return;
+  const row = card.querySelector('[data-pen-row]');
+  if (!row) return;
+  const s1 = card.querySelector('input[data-score="1"]').value;
+  const s2 = card.querySelector('input[data-score="2"]').value;
+  row.style.display = (s1!=='' && s2!=='' && s1===s2) ? 'flex' : 'none';
+}
+
+function scheduleSave(mid){
+  clearTimeout(_guessState.saveTimers[mid]);
+  _guessState.saveTimers[mid] = setTimeout(() => saveGuess(mid), 600);
+}
+
+async function saveGuess(mid){
+  const card = document.querySelector(`.guess-card[data-match-id="${mid}"]`);
+  if(!card) return;
+  const s1 = card.querySelector('input[data-score="1"]').value;
+  const s2 = card.querySelector('input[data-score="2"]').value;
+  if(s1==='' || s2==='') return;
+  const pen = card.querySelector('input[type="radio"]:checked')?.value || 0;
+
+  try {
+    const r = await authFetch(`/boloes/${_guessState.bolaoId}/guesses`, {
+      method:'POST',
+      body: JSON.stringify({ match_id:Number(mid), score1:Number(s1), score2:Number(s2), pen_winner:Number(pen) })
+    });
+    if(!r.ok) throw new Error('Erro');
+    const saved = await r.json();
+    _guessState.data.my_guesses[mid] = saved;
+    card.classList.add('has-guess');
+    const fb = card.querySelector(`[data-feedback="${mid}"]`);
+    fb.classList.add('show'); setTimeout(()=>fb.classList.remove('show'), 1500);
+  } catch(e){ showToast('Erro ao salvar'); }
+}
+
+/* ============================================================
+   Timer Utils
+   ============================================================ */
+function startTimerUpdate(){
+  stopTimerUpdate();
+  updateTimerDisplay();
+  _guessState.timerInterval = setInterval(updateTimerDisplay, 1000);
+}
+function stopTimerUpdate(){ clearInterval(_guessState.timerInterval); }
+function updateTimerDisplay(){
+  const phase = _guessState.data?.phases[_guessState.activePhase];
+  if(!phase?.lock_at) { document.getElementById('timerContainer').hidden=true; return; }
+  const diff = new Date(phase.lock_at) - new Date();
+  const el = document.getElementById('timerValue');
+  const cont = document.getElementById('timerContainer');
+  cont.hidden = false;
+  if(diff<=0) { el.textContent = 'BLOQUEADO'; cont.classList.add('locked'); return; }
+  cont.classList.remove('locked');
+  const h = Math.floor(diff/3600000), m = Math.floor((diff%3600000)/60000);
+  el.textContent = h>24 ? `${Math.floor(h/24)} dias` : `${h}h ${m}m`;
+}
+
+/* ============================================================
+   Forms & Modals
+   ============================================================ */
+function openModal(n){ document.getElementById(n==='create'?'modalCreate':'modalJoin').classList.add('open'); }
+function closeModal(el){ el.classList.remove('open'); }
+document.querySelectorAll('[data-open-modal]').forEach(el => el.onclick = () => openModal(el.dataset.openModal));
+document.querySelectorAll('[data-close-modal]').forEach(el => el.onclick = () => closeModal(el.closest('.modal-backdrop')));
+
+document.getElementById('formCreate').onsubmit = async (e) => {
+  e.preventDefault();
+  const f = e.target;
+  try {
+    const r = await authFetch('/boloes', { method:'POST', body: JSON.stringify({ name: f.name.value, visibility: f.visibility.value, description: f.description.value, codinome: f.codinome.value }) });
+    if(!r.ok) throw new Error('Erro');
+    closeModal(document.getElementById('modalCreate'));
+    showToast('Bolão criado!');
+    loadMyBoloes();
+  } catch(err){ alert('Erro ao criar'); }
+};
+
+document.getElementById('formJoin').onsubmit = async (e) => {
+  e.preventDefault();
+  const f = e.target;
+  const codinome = prompt("Seu codinome:");
+  if(!codinome) return;
+  try {
+    const r = await authFetch('/boloes/join', { method:'POST', body: JSON.stringify({ invite_code: f.code.value, codinome }) });
+    if(!r.ok) throw new Error('Erro');
+    closeModal(document.getElementById('modalJoin'));
+    showToast('Entrou no bolão!');
+    loadMyBoloes();
+  } catch(err){ alert('Código inválido'); }
+};
+
+/* ============================================================
+   Calendar Logic
+   ============================================================ */
+let calendarLoaded = false, calendarData = [];
+async function loadCalendar(){
+  const c = document.getElementById('calendarContent');
+  c.innerHTML = 'Carregando...';
+  try {
+    const r = await fetch('/api/matches/all');
+    calendarData = (await r.json()).matches;
+    const groups = [...new Set(calendarData.map(m=>m.group).filter(Boolean))].sort();
+    document.getElementById('filterGroup').innerHTML = '<option value="">Todos</option>' + groups.map(g=>`<option value="${g}">${g}</option>`).join('');
+    renderCalendar();
+    calendarLoaded = true;
+  } catch(e){ c.innerHTML = 'Erro ao carregar'; }
+}
+
+function renderCalendar(){
+  const c = document.getElementById('calendarContent');
+  const g = document.getElementById('filterGroup').value;
+  const t = document.getElementById('filterTeam').value.toLowerCase();
+  const filtered = calendarData.filter(m => (!g || m.group===g) && (!t || m.team1.name_pt.toLowerCase().includes(t) || m.team2.name_pt.toLowerCase().includes(t)));
+  
+  const byDate = {};
+  filtered.forEach(m => {
+    const dt = formatMatchDateTime(m.datetime_brt);
+    if(!byDate[dt.dateKey]) byDate[dt.dateKey] = { label: dt.date, items: [] };
+    byDate[dt.dateKey].items.push({m, dt});
+  });
+
+  c.innerHTML = Object.keys(byDate).sort().map(k => `
+    <div class="date-section">
+      <div class="date-heading">${byDate[k].label}</div>
+      ${byDate[k].items.map(i => `
+        <div class="calendar-row">
+          <div class="time">${i.dt.time}</div>
+          <div class="group">${i.m.group||'—'}</div>
+          <div class="cal-team">${i.m.team1.flag_url?`<img src="${i.m.team1.flag_url}">`:''}<span>${i.m.team1.name_pt}</span></div>
+          <div class="cal-vs">VS</div>
+          <div class="cal-team right"><span>${i.m.team2.name_pt}</span>${i.m.team2.flag_url?`<img src="${i.m.team2.flag_url}">`:''}</div>
+          <div class="cal-venue">${i.m.ground}</div>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+document.getElementById('filterGroup').onchange = renderCalendar;
+document.getElementById('filterTeam').oninput = renderCalendar;
+document.getElementById('btnClearFilters').onclick = () => { document.getElementById('filterGroup').value=''; document.getElementById('filterTeam').value=''; renderCalendar(); };
+
+/* ============================================================
+   Notifications & Toasts
+   ============================================================ */
+function showToast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000); }
+
+let _notifState = { unread: 0 };
+async function fetchNotifications(){
+  try {
+    const r = await authFetch('/notifications?limit=5');
+    if(r.ok) {
+        const d = await r.json();
+        const badge = document.getElementById('notifBadge');
+        badge.textContent = d.unread_count;
+        badge.hidden = d.unread_count === 0;
+    }
+  } catch(e){}
+}
+
+/* ============================================================
+   Invite Modal
+   ============================================================ */
+function openInviteModal(name, code){
+    const url = `${window.location.origin}/?invite=${code}`;
+    const msg = `Vem pro bolão ${name}: ${url}`;
+    if(navigator.share) {
+        navigator.share({ title: name, text: msg, url });
+    } else {
+        prompt("Copie o link de convite:", url);
+    }
+}
+
+// Init
+loadUpcoming();
+loadMyBoloes();
+setInterval(fetchNotifications, 30000);
+fetchNotifications();
+</script>
+</body>
+</html>

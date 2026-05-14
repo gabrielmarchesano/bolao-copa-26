@@ -99,6 +99,17 @@
   }
   .logout:hover{ background: rgba(255,255,255,.08); }
 
+  /* === BOTÃO MENU MOBILE === */
+  .mobile-menu-btn {
+    display: none;
+    background: transparent;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    padding: 4px;
+    margin-right: 10px;
+  }
+
   /* ========= SIDEBAR ========= */
   .sidebar{
     position: fixed;
@@ -884,6 +895,15 @@
       grid-template-columns: 80px 1fr 1fr 1fr;
     }
     .calendar-row .cal-venue, .calendar-row .group{ display: none; }
+    
+    /* Botão do Menu */
+    .mobile-menu-btn { display: flex; align-items: center; justify-content: center; }
+
+    /* Ajustes dos Palpites */
+    .guess-card { padding: 12px 8px; gap: 6px; }
+    .guess-card .team-col { font-size: 11px; min-width: 0; }
+    .guess-card .team-col span { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; }    
+    .guess-card .score-input input { width: 40px; height: 38px; font-size: 14px; padding: 0; }
   }
 
   .toast{
@@ -915,6 +935,13 @@
 
 <header class="topbar">
   <div class="brand">
+    <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Abrir menu">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </button>
     <img src="/static/logo-copa2026.png" alt="Copa 2026" class="logo-cup" />
     <span>Bolão<em>26</em></span>
   </div>
@@ -1062,6 +1089,9 @@
             <p id="detailBolaoDesc" style="font-size:13px; color:var(--navy-ink); opacity:0.8; line-height:1.5; max-width:600px;">Descrição...</p>
           </div>
           <div style="display:flex; gap: 8px; align-items:flex-start;">
+            <button class="btn-modal secondary" id="btnEditBolao" style="font-size:12px; white-space:nowrap; padding: 10px 16px;">
+              Editar
+            </button>
             <button class="btn-modal secondary" id="btnInviteDetail" style="font-size:12px; white-space:nowrap; padding: 10px 16px;">
               Convidar
             </button>
@@ -1186,6 +1216,27 @@
   </div>
 </div>
 
+<div class="modal-backdrop" id="modalEdit">
+  <div class="modal">
+    <h2>Editar Bolão</h2>
+    <p class="modal-sub">Altere as informações do seu torneio.</p>
+    <form id="formEdit" novalidate>
+      <div class="form-group">
+        <label>Nome do bolão</label>
+        <input type="text" name="name" id="editBolaoName" required />
+      </div>
+      <div class="form-group">
+        <label>Descrição</label>
+        <input type="text" name="description" id="editBolaoDesc" />
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-modal secondary" data-close-modal>Cancelar</button>
+        <button type="submit" class="btn-modal primary">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1240,14 +1291,28 @@ document.querySelector('.logout').addEventListener('click', () => {
 });
 
 /* ============================================================
-   Navigation
+   Navigation & Mobile Menu
    ============================================================ */
 const tabButtons = document.querySelectorAll('.nav-item');
 const panels = document.querySelectorAll('.tab-panel');
+const mobileBtn = document.getElementById('mobileMenuBtn');
+const sidebar = document.getElementById('sidebar');
+
+if (mobileBtn && sidebar) {
+  mobileBtn.addEventListener('click', () => {
+    sidebar.classList.toggle('open');
+  });
+}
 
 function activateTab(name){
   tabButtons.forEach(b => b.classList.toggle('active', b.dataset.tab === name));
   panels.forEach(p => { p.hidden = (p.dataset.panel !== name); });
+  
+  // Fecha a sidebar no celular após clicar em uma aba
+  const sidebarEl = document.getElementById('sidebar');
+  if (sidebarEl && sidebarEl.classList.contains('open')) {
+    sidebarEl.classList.remove('open');
+  }
   
   // Reset view do bolão quando mudar de aba ou clicar em "Torneios"
   if (name === 'torneios') {
@@ -1420,14 +1485,23 @@ function openBolaoDetail(id, name, inviteCode, description) {
   document.getElementById('detailBolaoTitle').textContent = name;
   document.getElementById('detailBolaoDesc').textContent = description;
 
-  // Armazena o ID do bolão para usar no botão de deletar
+  // Armazena o ID do bolão para usar no botão de deletar e editar
   window.currentBolaoId = id;
+  window.currentBolaoName = name;
+  window.currentBolaoDesc = description;
 
   const btnInvite = document.getElementById('btnInviteDetail');
   btnInvite.onclick = () => openInviteModal(name, inviteCode);
 
   const btnDelete = document.getElementById('btnDeleteBolao');
   btnDelete.onclick = () => deleteBolao(id, name);
+
+  const btnEdit = document.getElementById('btnEditBolao');
+  btnEdit.onclick = () => {
+    document.getElementById('editBolaoName').value = window.currentBolaoName;
+    document.getElementById('editBolaoDesc').value = window.currentBolaoDesc === 'Sem descrição disponível.' ? '' : window.currentBolaoDesc;
+    openModal('edit');
+  };
 
   activateBolaoTab('palpites');
   loadBolaoGuesses(id);
@@ -1482,7 +1556,6 @@ async function loadRanking(bolaoId, bolaoName){
     const r = await authFetch(`/boloes/${bolaoId}/ranking`);
     if (!r.ok) throw new Error('Erro ao carregar ranking');
     const rows = await r.json();
-    // ALTERAÇÃO OPCIONAL: Título removido daqui pois já está no topo da tela
     container.innerHTML = `
       <div class="bolao-list">
         ${rows.map(row => `
@@ -1588,17 +1661,15 @@ function renderGuessCard(match, myGuess, phaseLocked, phaseKey){
   const t1 = match.team1, t2 = match.team2;
   const flag = (t) => t.flag_url ? `<img src="${t.flag_url}" alt="${t.name_pt}" loading="lazy">` : '';
   
-  // --- INÍCIO DA MUDANÇA ---
-  // 1. Procura se o admin injetou resultado para este jogo
+  // Procura se o admin injetou resultado para este jogo
   const official = _guessState.data.official_results && _guessState.data.official_results[match.id];
   
-  // 2. Decide qual placar usar: o do Admin (prioridade) ou o da API Externa
+  // Decide qual placar usar: o do Admin (prioridade) ou o da API Externa
   const realScore1 = official ? official.score1 : match.score1;
   const realScore2 = official ? official.score2 : match.score2;
 
-  // 3. Verifica se acabou baseado no placar real que escolhemos
+  // Verifica se acabou baseado no placar real
   const isFinished = realScore1 !== null && realScore1 !== undefined;
-  // --- FIM DA MUDANÇA ---
 
   if (isFinished) {
     const guessSummary = hasGuess
@@ -1729,7 +1800,10 @@ function updateTimerDisplay(){
 /* ============================================================
    Forms & Modals
    ============================================================ */
-function openModal(n){ document.getElementById(n==='create'?'modalCreate':'modalJoin').classList.add('open'); }
+function openModal(n){ 
+  const idMap = { 'create':'modalCreate', 'join':'modalJoin', 'edit':'modalEdit' };
+  document.getElementById(idMap[n]).classList.add('open'); 
+}
 function closeModal(el){ el.classList.remove('open'); }
 document.querySelectorAll('[data-open-modal]').forEach(el => el.onclick = () => openModal(el.dataset.openModal));
 document.querySelectorAll('[data-close-modal]').forEach(el => el.onclick = () => closeModal(el.closest('.modal-backdrop')));
@@ -1758,6 +1832,40 @@ document.getElementById('formJoin').onsubmit = async (e) => {
     showToast('Entrou no bolão!');
     loadMyBoloes();
   } catch(err){ alert('Código inválido'); }
+};
+
+document.getElementById('formEdit').onsubmit = async (e) => {
+  e.preventDefault();
+  const f = e.target;
+  const payload = {
+      name: f.name.value,
+      description: f.description.value
+  };
+
+  try {
+    const r = await authFetch(`/boloes/${window.currentBolaoId}`, { 
+        method: 'PATCH', 
+        body: JSON.stringify(payload) 
+    });
+    
+    if(!r.ok) {
+        const err = await r.json().catch(() => ({}));
+        throw new Error(err.detail || 'Erro ao editar bolão');
+    }
+    
+    const updatedBolao = await r.json();
+    closeModal(document.getElementById('modalEdit'));
+    showToast('Bolão atualizado com sucesso!');
+    
+    document.getElementById('detailBolaoTitle').textContent = updatedBolao.name;
+    document.getElementById('detailBolaoDesc').textContent = updatedBolao.description || 'Sem descrição disponível.';
+    window.currentBolaoName = updatedBolao.name;
+    window.currentBolaoDesc = updatedBolao.description;
+    
+    loadMyBoloes();
+  } catch(err) { 
+      alert(err.message); 
+  }
 };
 
 /* ============================================================

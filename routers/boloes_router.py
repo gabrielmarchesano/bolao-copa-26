@@ -26,9 +26,11 @@ from database import get_db
 from models import Bolao, Guess, Membership, User
 from schemas import BolaoCreate, BolaoJoin, BolaoPreview, BolaoRead, RankingRow
 from models import JoinRequest, Notification
-from schemas import BolaoSearchResult, JoinRequestCreate, JoinRequestRead, JoinRequestRespond
+from schemas import BolaoSearchResult, JoinRequestCreate, JoinRequestRead, JoinRequestRespond, CodinomeUpdate, BolaoUpdate
 from services import notifications as notif_svc
 from services.phases import has_tournament_started
+
+
 
 router = APIRouter(prefix="/boloes", tags=["boloes"])
 
@@ -278,6 +280,35 @@ def get_bolao_details(
     return _bolao_to_read(bolao, count)
 
 
+@router.patch("/{bolao_id}/codinome")
+def update_my_codinome(
+    bolao_id: int,
+    payload: CodinomeUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Muda o codinome do usuário num bolão específico, desde que a Copa não tenha começado."""
+    if has_tournament_started():
+        raise HTTPException(400, "A competição já começou. Não é mais possível alterar o codinome.")
+        
+    codinome = payload.new_codinome.strip()
+    if not codinome or len(codinome) > 40:
+        raise HTTPException(400, "Codinome inválido.")
+
+    membership = db.exec(
+        select(Membership).where(
+            Membership.user_id == current_user.id,
+            Membership.bolao_id == bolao_id
+        )
+    ).first()
+
+    if not membership:
+        raise HTTPException(404, "Você não participa deste bolão.")
+
+    membership.codinome = codinome
+    db.commit()
+    return {"status": "ok", "new_codinome": codinome}
+
 # ----------------------------------------------------------------------------
 # DELETE /boloes/{id} — deletar bolão
 # 
@@ -367,6 +398,9 @@ def join_bolao(
         select(func.count(Membership.id)).where(Membership.bolao_id == bolao.id)
     ).one()
     return _bolao_to_read(bolao, count)
+
+
+
 
 
 # ----------------------------------------------------------------------------

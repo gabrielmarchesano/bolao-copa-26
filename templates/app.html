@@ -1081,7 +1081,9 @@
 
     <div id="bolaoDetailContainer" hidden>
       <button id="btnBackToBoloes" class="btn-filter-clear" style="margin-bottom: 16px; padding: 0; font-size: 13px;">← Voltar para lista</button>
-
+      <button class="btn-modal secondary" id="btnChangeCodinome" style="font-size:12px; padding: 10px 16px;">
+        Mudar Codinome
+      </button>
       <div class="bolao-header" style="background:#fff; padding:20px 24px; border-radius:12px; border:1px solid var(--divider); margin-bottom:24px; box-shadow: 0 4px 12px rgba(14,44,110,.04);">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap: 16px;">
           <div>
@@ -1489,6 +1491,27 @@ function openBolaoDetail(id, name, inviteCode, description) {
   window.currentBolaoId = id;
   window.currentBolaoName = name;
   window.currentBolaoDesc = description;
+  const btnChangeCodinome = document.getElementById('btnChangeCodinome');
+  btnChangeCodinome.onclick = async () => {
+    const newCodinome = prompt("Digite seu novo codinome para este bolão:");
+    if (!newCodinome) return;
+    
+    try {
+        const r = await authFetch(`/boloes/${id}/codinome`, {
+            method: 'PATCH',
+            body: JSON.stringify({ new_codinome: newCodinome })
+        });
+        
+        if (!r.ok) {
+            const err = await r.json().catch(()=>({}));
+            throw new Error(err.detail || 'Erro ao alterar codinome');
+        }
+        showToast('Codinome atualizado com sucesso!');
+        loadRanking(id, name); // Recarrega o ranking para mostrar o novo nome
+    } catch(e) {
+        alert(e.message);
+      }
+  };
 
   const btnInvite = document.getElementById('btnInviteDetail');
   btnInvite.onclick = () => openInviteModal(name, inviteCode);

@@ -60,6 +60,10 @@ class BolaoUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
 
+
+class CodinomeUpdate(BaseModel):
+    new_codinome: str
+
 # ============================================================================
 # GUESS
 # ============================================================================
@@ -87,6 +91,7 @@ class GuessRead(SQLModel):
     points: int
     locked: bool
     updated_at: datetime
+
 
 
 # ============================================================================

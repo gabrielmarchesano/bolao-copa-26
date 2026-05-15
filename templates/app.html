@@ -1558,7 +1558,9 @@ async function loadRanking(bolaoId, bolaoName){
     const rows = await r.json();
     container.innerHTML = `
       <div class="bolao-list">
-        ${rows.map(row => `
+        ${rows.map(row => {
+          const realNameBadge = row.real_name ? `<span style="font-size:10px; background:var(--navy-soft); color:var(--navy); padding:2px 6px; border-radius:4px; margin-left:6px; letter-spacing:0.5px;">${row.real_name}</span>` : '';
+          return `
           <div class="bolao-row">
             <div>
               <div class="title">${row.position}º · ${row.codinome}</div>
@@ -1566,7 +1568,7 @@ async function loadRanking(bolaoId, bolaoName){
             </div>
             <div class="pts">${row.total_points} pts</div>
           </div>
-        `).join('')}
+        `}).join('')}
       </div>
     `;
   } catch(err){ container.innerHTML = `<div class="calendar-empty">Erro: ${err.message}</div>`; }

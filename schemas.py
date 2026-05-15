@@ -6,7 +6,7 @@ Evita vazar campos sensíveis (ex: password_hash) na resposta.
 """
 from datetime import datetime
 from typing import List, Optional
-
+from pydantic import BaseModel
 from sqlmodel import Field, SQLModel
 
 
@@ -56,6 +56,9 @@ class BolaoJoin(SQLModel):
     invite_code: str
     codinome: str
 
+class BolaoUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
 
 # ============================================================================
 # GUESS
@@ -91,6 +94,7 @@ class GuessRead(SQLModel):
 # ============================================================================
 class RankingRow(SQLModel):
     membership_id: int
+    real_name: Optional[str] = None
     codinome: str
     total_points: int
     guesses_count: int

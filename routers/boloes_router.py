@@ -14,6 +14,8 @@ fazer o trabalho pesado com índices.
 """
 import secrets
 import string
+import models
+import schemas
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -113,6 +115,8 @@ def create_bolao(
     db.commit()
 
     return _bolao_to_read(bolao, members_count=1)
+
+
 
 
 # ----------------------------------------------------------------------------
@@ -374,44 +378,43 @@ def ranking(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """
-    Ranking do bolão ordenado por pontos desc.
-
-    Query:
-      - LEFT JOIN Membership ↔ Guess (left pra incluir quem ainda não palpitou)
-      - WHERE bolao_id = X
-      - GROUP BY Membership.id
-      - SUM(points) → total, COUNT(guesses) → palpites feitos
-      - ORDER BY SUM DESC
-
-    O `coalesce(SUM, 0)` garante 0 em vez de NULL pros que nunca palpitaram.
-    """
+    """Ranking do bolão. Revela o nome real apenas para o dono."""
     get_membership_or_403(bolao_id, current_user, db)
 
+    # 1. Descobre se quem está acessando é o dono do bolão
+    bolao = db.get(Bolao, bolao_id)
+    is_owner = (bolao.owner_id == current_user.id)
+
+    # 2. Fazemos o JOIN com a tabela User para buscar o nome real (full_name)
     stmt = (
         select(
             Membership.id,
             Membership.codinome,
+            User.full_name,  # <--- Pegando o nome real no banco
             func.coalesce(func.sum(Guess.points), 0).label("total_points"),
             func.count(Guess.id).label("guesses_count"),
         )
+        .join(User, User.id == Membership.user_id) # Ligação Membership -> User
         .join(Guess, Guess.membership_id == Membership.id, isouter=True)
         .where(Membership.bolao_id == bolao_id)
-        .group_by(Membership.id, Membership.codinome)
+        .group_by(Membership.id, Membership.codinome, User.full_name)
         .order_by(func.coalesce(func.sum(Guess.points), 0).desc())
     )
     rows = db.exec(stmt).all()
 
+    # 3. Monta a resposta. A regra de privacidade entra no "real_name"
     return [
         RankingRow(
             membership_id=row[0],
             codinome=row[1],
-            total_points=int(row[2] or 0),
-            guesses_count=int(row[3] or 0),
+            real_name=row[2] if is_owner else None, # Revela se for dono, esconde (None) se for membro
+            total_points=int(row[3] or 0),
+            guesses_count=int(row[4] or 0),
             position=i + 1,
         )
         for i, row in enumerate(rows)
     ]
+
 
 # ============================================================================
 # POST /boloes/{id}/join-requests — solicitar entrada
@@ -598,3 +601,32 @@ def respond_join_request(
 
     db.commit()
     return {"status": "ok", "action": payload.action, "request_id": req_id}
+
+
+@router.patch("/{bolao_id}", response_model=BolaoRead)
+def edit_bolao(
+    bolao_id: int, 
+    payload: schemas.BolaoUpdate, 
+    db: Session = Depends(get_db), 
+    current_user: User = Depends(get_current_user)
+):
+    """Edita os detalhes do bolão (apenas dono)."""
+    bolao = db.get(Bolao, bolao_id)
+    if not bolao:
+        raise HTTPException(status_code=404, detail="Bolão não encontrado.")
+        
+    if bolao.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Apenas o criador pode editar este bolão.")
+    
+    if payload.name is not None:
+        bolao.name = payload.name
+    if payload.description is not None:
+        bolao.description = payload.description
+        
+    db.add(bolao)
+    db.commit()
+    db.refresh(bolao)
+    
+    # Retorna o formato correto (BolaoRead) com a contagem de membros
+    count = db.exec(select(func.count(Membership.id)).where(Membership.bolao_id == bolao_id)).one()
+    return _bolao_to_read(bolao, count)

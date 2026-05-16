@@ -1130,15 +1130,15 @@
   <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
     <div>
       <label style="display: block; font-size: 11px; font-weight: 800; color: var(--navy); margin-bottom: 6px; text-transform: uppercase;">Seleção Campeã</label>
-      <input type="text" id="guessCampeao" placeholder="Ex: Brasil" style="width: 100%; padding: 10px; border: 1.5px solid var(--border); border-radius: 8px; font-family: inherit; font-weight: 600; color: var(--navy-ink);">
+      <input type="text" id="guessCampeao" placeholder="Ex: Curaçao" style="width: 100%; padding: 10px; border: 1.5px solid var(--border); border-radius: 8px; font-family: inherit; font-weight: 600; color: var(--navy-ink);">
     </div>
     <div>
       <label style="display: block; font-size: 11px; font-weight: 800; color: var(--navy); margin-bottom: 6px; text-transform: uppercase;">Artilheiro</label>
-      <input type="text" id="guessArtilheiro" placeholder="Ex: Mbappé" style="width: 100%; padding: 10px; border: 1.5px solid var(--border); border-radius: 8px; font-family: inherit; font-weight: 600; color: var(--navy-ink);">
+      <input type="text" id="guessArtilheiro" placeholder="Ex: Richard Rios" style="width: 100%; padding: 10px; border: 1.5px solid var(--border); border-radius: 8px; font-family: inherit; font-weight: 600; color: var(--navy-ink);">
     </div>
     <div>
       <label style="display: block; font-size: 11px; font-weight: 800; color: var(--navy); margin-bottom: 6px; text-transform: uppercase;">Melhor Jogador</label>
-      <input type="text" id="guessMelhorJogador" placeholder="Ex: Vini Jr" style="width: 100%; padding: 10px; border: 1.5px solid var(--border); border-radius: 8px; font-family: inherit; font-weight: 600; color: var(--navy-ink);">
+      <input type="text" id="guessMelhorJogador" placeholder="Ex: Arrascaeta" style="width: 100%; padding: 10px; border: 1.5px solid var(--border); border-radius: 8px; font-family: inherit; font-weight: 600; color: var(--navy-ink);">
     </div>
     </div>
   </div>
@@ -2006,6 +2006,12 @@ function openInviteModal(name, code){
 let _extraGuessTimer = null;
 
 async function loadExtraGuesses(bolaoId) {
+    // 1. Limpa os campos visualmente antes de buscar no banco
+    // Isso evita que pisque o palpite de um bolão anterior enquanto carrega o novo
+    document.getElementById('guessCampeao').value = '';
+    document.getElementById('guessArtilheiro').value = '';
+    document.getElementById('guessMelhorJogador').value = '';
+
     try {
         const r = await authFetch(`/boloes/${bolaoId}/extra-guesses`);
         if (r.ok) {
@@ -2016,20 +2022,27 @@ async function loadExtraGuesses(bolaoId) {
         }
     } catch (e) { console.warn("Erro ao carregar bônus", e); }
 
-    // Ativa o salvamento automático para os três inputs
+    // 2. Trava o salvamento automático de forma segura usando oninput
     const inputs = ['guessCampeao', 'guessArtilheiro', 'guessMelhorJogador'];
-    inputs.forEach(id => {
-        const el = document.getElementById(id);
+    inputs.forEach(inputId => {
+        const el = document.getElementById(inputId);
         if (el) {
-            el.addEventListener('input', () => {
-                clearTimeout(_extraGuessTimer); // Cancela o save anterior se o usuário ainda tá digitando
-                _extraGuessTimer = setTimeout(() => saveExtraGuesses(bolaoId), 800); // Salva 800ms após parar de digitar
-            });
+            el.oninput = () => {
+                clearTimeout(_extraGuessTimer);
+                
+                // Pega o ID global do bolão que está aberto na tela AGORA
+                const idCerto = window.currentBolaoId; 
+                if (!idCerto) return; // Se por algum motivo não tiver ID, nem tenta salvar
+                
+                _extraGuessTimer = setTimeout(() => saveExtraGuesses(idCerto), 800);
+            };
         }
     });
 }
 
 async function saveExtraGuesses(bolaoId) {
+    if (!bolaoId) return; // Dupla proteção contra o 'undefined'
+    
     try {
         const payload = {
             campeao: document.getElementById('guessCampeao').value,
@@ -2046,12 +2059,11 @@ async function saveExtraGuesses(bolaoId) {
             const err = await r.json();
             let errorMessage = "Erro ao salvar palpites bônus";
             
-            // Tratamento especial para evitar o [object Object] do FastAPI
             if (err.detail) {
                 if (typeof err.detail === 'string') {
-                    errorMessage = err.detail; // Erro simples (ex: "Torneio já começou")
+                    errorMessage = err.detail; 
                 } else if (Array.isArray(err.detail)) {
-                    errorMessage = err.detail[0].msg; // Pega a mensagem do primeiro erro da lista
+                    errorMessage = err.detail[0].msg;
                 }
             }
             throw new Error(errorMessage);
@@ -2068,7 +2080,6 @@ async function saveExtraGuesses(bolaoId) {
         showToast(e.message || "Erro desconhecido");
     }
 }
-
 
 // Init
 loadUpcoming();

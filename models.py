@@ -127,6 +127,21 @@ class JoinRequest(SQLModel, table=True):
     responded_at: Optional[datetime] = Field(default=None)
 
 
+
+class ExtraGuess(SQLModel, table=True):
+    """Palpites extras (Campeão, Artilheiro, Melhor Jogador) que valem pontos bônus."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    membership_id: int = Field(foreign_key="membership.id", index=True, unique=True)
+    
+    campeao: Optional[str] = Field(default=None, max_length=100)
+    artilheiro: Optional[str] = Field(default=None, max_length=100)
+    melhor_jogador: Optional[str] = Field(default=None, max_length=100)
+
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+
 # ============================================================================
 # NOTIFICATION — caixa de entrada de cada user
 # ============================================================================

@@ -61,6 +61,11 @@ class BolaoUpdate(BaseModel):
     description: Optional[str] = None
 
 
+class ExtraGuessPayload(BaseModel):
+    campeao: Optional[str] = None
+    artilheiro: Optional[str] = None
+    melhor_jogador: Optional[str] = None
+
 class CodinomeUpdate(BaseModel):
     new_codinome: str
 

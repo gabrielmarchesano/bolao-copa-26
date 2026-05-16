@@ -23,8 +23,8 @@ from sqlmodel import Session, func, select
 
 from auth import get_current_user, get_membership_or_403
 from database import get_db
-from models import Bolao, Guess, Membership, User
-from schemas import BolaoCreate, BolaoJoin, BolaoPreview, BolaoRead, RankingRow
+from models import Bolao, Guess, Membership, User, ExtraGuess
+from schemas import BolaoCreate, BolaoJoin, BolaoPreview, BolaoRead, RankingRow, ExtraGuessPayload
 from models import JoinRequest, Notification
 from schemas import BolaoSearchResult, JoinRequestCreate, JoinRequestRead, JoinRequestRespond, CodinomeUpdate, BolaoUpdate
 from services import notifications as notif_svc
@@ -33,6 +33,51 @@ from services.phases import has_tournament_started
 
 
 router = APIRouter(prefix="/boloes", tags=["boloes"])
+
+
+@router.get("/{bolao_id}/extra-guesses")
+def get_extra_guesses(
+    bolao_id: int, 
+    db: Session = Depends(get_db), 
+    current_user: User = Depends(get_current_user)
+):
+    """Busca os palpites extras do usuário neste bolão."""
+    membership = db.exec(select(Membership).where(Membership.user_id == current_user.id, Membership.bolao_id == bolao_id)).first()
+    if not membership:
+        raise HTTPException(404, "Você não participa deste bolão.")
+        
+    extra = db.exec(select(ExtraGuess).where(ExtraGuess.membership_id == membership.id)).first()
+    return extra or {}
+
+@router.post("/{bolao_id}/extra-guesses")
+def save_extra_guesses(
+    bolao_id: int, 
+    payload: ExtraGuessPayload, 
+    db: Session = Depends(get_db), 
+    current_user: User = Depends(get_current_user)
+):
+    """Salva os palpites extras. Bloqueado se o torneio já começou."""
+    if has_tournament_started():
+        raise HTTPException(400, "O torneio já começou. Palpites extras encerrados.")
+        
+    membership = db.exec(select(Membership).where(Membership.user_id == current_user.id, Membership.bolao_id == bolao_id)).first()
+    if not membership:
+        raise HTTPException(404, "Você não participa deste bolão.")
+        
+    extra = db.exec(select(ExtraGuess).where(ExtraGuess.membership_id == membership.id)).first()
+    
+    if not extra:
+        extra = ExtraGuess(membership_id=membership.id)
+        db.add(extra)
+        
+    extra.campeao = payload.campeao
+    extra.artilheiro = payload.artilheiro
+    extra.melhor_jogador = payload.melhor_jogador
+    extra.updated_at = datetime.utcnow()
+    
+    db.commit()
+    return {"status": "ok", "message": "Palpites extras salvos!"}
+
 
 
 # ----------------------------------------------------------------------------

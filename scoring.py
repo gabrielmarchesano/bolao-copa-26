@@ -190,9 +190,9 @@ def calculate_tournament_points(
 
     points = 0
     if real_champion and _normalize(guess_champion) == _normalize(real_champion):
-        points += 50
+        points += 20
     if real_scorer and _normalize(guess_scorer) == _normalize(real_scorer):
-        points += 30
+        points += 20    
     if real_best_player and _normalize(guess_best_player) == _normalize(real_best_player):
-        points += 30
+        points += 20
     return points

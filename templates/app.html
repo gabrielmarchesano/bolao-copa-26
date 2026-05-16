@@ -1754,9 +1754,7 @@ function renderGuessCard(match, myGuess, phaseLocked, phaseKey){
         <div class="team-col">${flag(t1)}<span>${t1.name_pt}</span></div>
         
 
-        <div class="meta-row" style="flex-direction:column; align-items:center; gap:6px; background:var(--bg-soft); padding:10px; border-radius:8px; margin-top:12px; border:none;">
-          <div style="font-size:10px; color:var(--navy-ink); font-weight:800; text-transform:uppercase; opacity:0.6;">Resultado Oficial</div>
-        </div>
+        
         <div class="score-input" style="gap: 12px; justify-content:center; border:none; background:transparent;">
           <span style="font-size: 22px; font-weight: 800; color: var(--navy);">${realScore1}</span>
           <span class="x">×</span>
@@ -1766,7 +1764,7 @@ function renderGuessCard(match, myGuess, phaseLocked, phaseKey){
         <div class="team-col right"><span>${t2.name_pt}</span>${flag(t2)}</div>
 
         <div class="meta-row" style="flex-direction:column; align-items:center; gap:6px; background:var(--bg-soft); padding:10px; border-radius:8px; margin-top:12px; border:none;">
-         
+          <div style="font-size:10px; color:var(--navy-ink); font-weight:800; text-transform:uppercase; opacity:0.6;">Resultado Oficial</div>
           <div style="font-size:13px; color:var(--navy-ink); font-weight:600;">${guessSummary}</div>
         </div>
       </div>

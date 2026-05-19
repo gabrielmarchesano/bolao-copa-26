@@ -66,6 +66,12 @@ class ExtraGuessPayload(BaseModel):
     artilheiro: Optional[str] = None
     melhor_jogador: Optional[str] = None
 
+class ExtraValidationPayload(BaseModel):
+    campeao_oficial: str
+    artilheiro_oficial: str
+    melhor_jogador_oficial: str
+
+
 class CodinomeUpdate(BaseModel):
     new_codinome: str
 

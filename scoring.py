@@ -46,7 +46,8 @@ REGRA DE TORNEIO (outrights, palpites pré-Copa)
 """
 from math import floor
 from typing import Optional
-
+import unicodedata
+import difflib
 
 # ============================================================================
 # PESOS POR FASE
@@ -161,6 +162,27 @@ def calculate_match_points(
 # ============================================================================
 # PONTUAÇÃO DE TORNEIO (outrights, palpites pré-Copa)
 # ============================================================================
+def _checar_match_flexivel(palpite: Optional[str], oficial: Optional[str], threshold: float = 0.7) -> bool:
+    """Valida acertos considerando minúsculas, sem acentos, substrings ou similaridade textual."""
+    if not palpite or not oficial:
+        return False
+        
+    def limpar(texto):
+        t = str(texto).strip().lower()
+        return ''.join(c for c in unicodedata.normalize('NFD', t) if unicodedata.category(c) != 'Mn')
+
+    p_limpo = limpar(palpite)
+    o_limpo = limpar(oficial)
+
+    if p_limpo == o_limpo:
+        return True
+    if p_limpo in o_limpo or o_limpo in p_limpo:
+        return True
+        
+    similaridade = difflib.SequenceMatcher(None, p_limpo, o_limpo).ratio()
+    return similaridade >= threshold
+
+
 def calculate_tournament_points(
     guess_champion: Optional[str],
     guess_scorer: Optional[str],
@@ -170,29 +192,14 @@ def calculate_tournament_points(
     real_best_player: Optional[str],
 ) -> int:
     """
-    Pontos por palpites gerais do torneio (feitos antes do início).
-
-    Comparação case-insensitive e ignorando espaços extras. Não pontua se
-    a realidade ainda não foi definida (real_X == None / "").
-
-    Returns:
-        Pontuação total (int).
-
-    Exemplos:
-        >>> calculate_tournament_points("Brasil", "Vinicius Jr", "Rodrygo",
-        ...                             "Brasil", "Vinicius Jr", "Mbappé")
-        80  # 50 + 30 + 0
-        >>> calculate_tournament_points("Brasil", None, None, None, None, None)
-        0   # realidade ainda não definida
+    Pontos por palpites gerais do torneio.
+    Soma 20 pontos por acerto usando a verificação flexível (fuzzy match).
     """
-    def _normalize(val: Optional[str]) -> str:
-        return str(val).strip().lower() if val else ""
-
     points = 0
-    if real_champion and _normalize(guess_champion) == _normalize(real_champion):
+    if real_champion and _checar_match_flexivel(guess_champion, real_champion):
         points += 20
-    if real_scorer and _normalize(guess_scorer) == _normalize(real_scorer):
+    if real_scorer and _checar_match_flexivel(guess_scorer, real_scorer):
         points += 20    
-    if real_best_player and _normalize(guess_best_player) == _normalize(real_best_player):
+    if real_best_player and _checar_match_flexivel(guess_best_player, real_best_player):
         points += 20
     return points

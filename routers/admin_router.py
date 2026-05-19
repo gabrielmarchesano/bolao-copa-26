@@ -18,9 +18,9 @@ from sqlmodel import Session, select
 
 from auth import require_admin
 from database import get_db
-from models import Guess, MatchResult
-from schemas import MatchResultCreate
-from scoring import calculate_match_points
+from models import Guess, MatchResult, ExtraGuess, ChampionshipResult
+from schemas import MatchResultCreate, ExtraValidationPayload
+from scoring import calculate_match_points, calculate_tournament_points
 from services import get_all_matches
 from services.phase_control import (
     force_open_phase,
@@ -36,6 +36,69 @@ router = APIRouter(
     tags=["admin"],
     dependencies=[Depends(require_admin)],
 )
+
+@router.post("/championship-results")
+def set_championship_results(
+    payload: ExtraValidationPayload, 
+    db: Session = Depends(get_db), 
+):
+    """
+    Rota do Admin Geral da Plataforma. 
+    Define o gabarito oficial da Copa e calcula os pontos bônus de TODOS os usuários do sistema.
+    """
+    # 1. Salva ou atualiza o gabarito único (ID 1) no banco de dados
+    oficial = db.get(ChampionshipResult, 1)
+    if not oficial:
+        oficial = ChampionshipResult(id=1, campeao="", artilheiro="", melhor_jogador="")
+        db.add(oficial)
+        
+    oficial.campeao = payload.campeao_oficial
+    oficial.artilheiro = payload.artilheiro_oficial
+    oficial.melhor_jogador = payload.melhor_jogador_oficial
+    oficial.updated_at = datetime.utcnow()
+    db.commit()
+
+    # 2. Busca os palpites extras de ABSOLUTAMENTE TODO MUNDO na plataforma
+    todos_palpites = db.exec(select(ExtraGuess)).all()
+
+    # 3. Calcula os pontos usando a regra do scoring.py e atualiza as linhas
+    for palpite in todos_palpites:
+        pontos_ganhos = calculate_tournament_points(
+            guess_champion=palpite.campeao,
+            guess_scorer=palpite.artilheiro,
+            guess_best_player=palpite.melhor_jogador,
+            real_champion=oficial.campeao,
+            real_scorer=oficial.artilheiro,
+            real_best_player=oficial.melhor_jogador
+        )
+        palpite.points = pontos_ganhos
+        db.add(palpite)
+
+    db.commit()
+    return {"status": "ok", "message": "Gabarito de torneio salvo e pontos extras distribuídos globalmente!"}
+
+@router.delete("/championship-results")
+def reset_championship_results(db: Session = Depends(get_db)):
+    """
+    Reseta o gabarito oficial e zera os pontos extras de todos os palpites de torneio.
+    """
+    oficial = db.get(ChampionshipResult, 1)
+    if not oficial:
+        raise HTTPException(404, "Gabarito oficial não encontrado.")
+    
+    oficial.campeao = None
+    oficial.artilheiro = None
+    oficial.melhor_jogador = None
+    oficial.updated_at = datetime.utcnow()
+    db.add(oficial)
+
+    todos_palpites = db.exec(select(ExtraGuess)).all()
+    for palpite in todos_palpites:
+        palpite.points = 0
+        db.add(palpite)
+
+    db.commit()
+    return {"status": "ok", "message": "Gabarito de torneio resetado e pontos extras zerados!"}
 
 
 @router.post("/matches/{match_id}/result")

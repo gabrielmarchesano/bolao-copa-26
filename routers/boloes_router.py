@@ -23,7 +23,7 @@ from sqlmodel import Session, func, select
 
 from auth import get_current_user, get_membership_or_403
 from database import get_db
-from models import Bolao, Guess, Membership, User, ExtraGuess
+from models import Bolao, Guess, Membership, User, ExtraGuess, ChampionshipResult 
 from schemas import BolaoCreate, BolaoJoin, BolaoPreview, BolaoRead, RankingRow, ExtraGuessPayload
 from models import JoinRequest, Notification
 from schemas import BolaoSearchResult, JoinRequestCreate, JoinRequestRead, JoinRequestRespond, CodinomeUpdate, BolaoUpdate
@@ -451,49 +451,47 @@ def join_bolao(
 # ----------------------------------------------------------------------------
 # GET /boloes/{id}/ranking — tabela de classificação
 # ----------------------------------------------------------------------------
-@router.get("/{bolao_id}/ranking", response_model=list[RankingRow])
+@router.get("/{bolao_id}/ranking", response_model=list[schemas.RankingRow])
 def ranking(
     bolao_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Ranking do bolão. Revela o nome real apenas para o dono."""
+    """Ranking do bolão somando palpites normais e bônus. Revela nome real para o dono."""
     get_membership_or_403(bolao_id, current_user, db)
 
-    # 1. Descobre se quem está acessando é o dono do bolão
     bolao = db.get(Bolao, bolao_id)
     is_owner = (bolao.owner_id == current_user.id)
 
-    # 2. Fazemos o JOIN com a tabela User para buscar o nome real (full_name)
+    # JOIN massivo somando Guess.points e ExtraGuess.points
     stmt = (
         select(
             Membership.id,
             Membership.codinome,
-            User.full_name,  # <--- Pegando o nome real no banco
-            func.coalesce(func.sum(Guess.points), 0).label("total_points"),
+            User.full_name,
+            (func.coalesce(func.sum(Guess.points), 0) + func.coalesce(ExtraGuess.points, 0)).label("total_points"),
             func.count(Guess.id).label("guesses_count"),
         )
-        .join(User, User.id == Membership.user_id) # Ligação Membership -> User
+        .join(User, User.id == Membership.user_id)
         .join(Guess, Guess.membership_id == Membership.id, isouter=True)
+        .join(ExtraGuess, ExtraGuess.membership_id == Membership.id, isouter=True)
         .where(Membership.bolao_id == bolao_id)
-        .group_by(Membership.id, Membership.codinome, User.full_name)
-        .order_by(func.coalesce(func.sum(Guess.points), 0).desc())
+        .group_by(Membership.id, Membership.codinome, User.full_name, ExtraGuess.points)
+        .order_by((func.coalesce(func.sum(Guess.points), 0) + func.coalesce(ExtraGuess.points, 0)).desc())
     )
     rows = db.exec(stmt).all()
 
-    # 3. Monta a resposta. A regra de privacidade entra no "real_name"
     return [
-        RankingRow(
+        schemas.RankingRow(
             membership_id=row[0],
             codinome=row[1],
-            real_name=row[2] if is_owner else None, # Revela se for dono, esconde (None) se for membro
+            real_name=row[2] if is_owner else None,
             total_points=int(row[3] or 0),
             guesses_count=int(row[4] or 0),
             position=i + 1,
         )
         for i, row in enumerate(rows)
     ]
-
 
 # ============================================================================
 # POST /boloes/{id}/join-requests — solicitar entrada

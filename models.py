@@ -87,6 +87,17 @@ class Guess(SQLModel, table=True):
     membership: "Membership" = Relationship(back_populates="guesses")
 
 
+class ChampionshipResult(SQLModel, table=True):
+    """Resultados oficiais globais do torneio (Gabarito para validação do Admin)."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    
+    campeao: str = Field(max_length=100)
+    artilheiro: str = Field(max_length=100)
+    melhor_jogador: str = Field(max_length=100)
+    
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
 class MatchResult(SQLModel, table=True):
     """Resultado real de um jogo (inserido pelo admin)."""
     match_id: int = Field(primary_key=True)
@@ -137,6 +148,7 @@ class ExtraGuess(SQLModel, table=True):
     artilheiro: Optional[str] = Field(default=None, max_length=100)
     melhor_jogador: Optional[str] = Field(default=None, max_length=100)
 
+    points: int = Field(default=0)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 

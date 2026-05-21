@@ -58,9 +58,9 @@ _PHASE_WEIGHTS: dict[str, int] = {
     "Round of 32": 2,
     "Round of 16": 2,
     "Quarter-finals": 3,
-    "Semi-finals": 4,
-    "Play-off for third place": 2,
-    "Final": 5,
+    "Semi-finals": 3,
+    "Play-off for third place": 3,
+    "Final": 4,
 }
 
 
@@ -126,23 +126,31 @@ def calculate_match_points(
 
     # ─── 1. Placar exato? ───
     if guess_s1 == real_s1 and guess_s2 == real_s2:
-        full_points = 3 * weight
-
+        points = 3 * weight
         # Jogo foi pra pênaltis E user palpitou quem vence nos pênaltis?
         # Só penaliza se o user de fato chutou um pen_winner (>0); se não
         # chutou (=0), tratamos como "não sabia que era mata-mata" e damos
         # pontos cheios — decisão de produto para não punir user desavisado.
         if real_pen_winner != 0 and guess_pen_winner != 0:
             if guess_pen_winner == real_pen_winner:
-                return full_points
-            # Errou quem ganhou nos pênaltis → 2/3 da pontuação, floor
-            return floor(full_points * 2 / 3)
+                return 3 * weight  # Acertou placar exato + acertou pen_winner → pontuação cheia
+            
+            return 3 * max(1, weight - 1)
+        
+        return points
 
-        return full_points
+
+        
 
     # ─── 2. Ambos empates, placares diferentes (ex: 1×1 palpite, 2×2 real) ───
     if guess_s1 == guess_s2 and real_s1 == real_s2:
+        if real_pen_winner != 0 and guess_pen_winner != 0:
+            if guess_pen_winner == real_pen_winner:
+                return 1* weight  # Errou empate + acertou pen_winner 
+            return 1* max(1, weight - 1)  # Errou empate  e errou pen_winner 
         return 1 * weight
+
+
 
     # ─── 3. Acertou só quem venceu (fora empate) ───
     def _winner(s1: int, s2: int) -> int:

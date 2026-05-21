@@ -155,13 +155,13 @@ def _enrich_match(raw: dict, idx: int) -> dict:
     # Tratamento de string do Grupo (Ex: "GROUP_A" -> "Group A")
     raw_group = raw.get("group")
     group_str = raw_group.replace("_", " ").title() if raw_group else ""
-
+    ground = raw.get("venue") or "A definir"
     # Retorna o dicionário exatamente como o Frontend (app.html) espera ler
     return {
-        "id": raw.get("id", idx + 1),
+        "id": idx + 1,
         "round": mapped_round,
         "group": group_str,
-        "ground": "A definir", # A nova API não envia o estádio facilmente no tier grátis
+        "ground": ground, # A nova API não envia o estádio facilmente no tier grátis
         "date_raw": dt_brt.strftime("%Y-%m-%d"),
         "time_raw": dt_brt.strftime("%H:%M"),
         "datetime_brt": dt_brt.isoformat(),

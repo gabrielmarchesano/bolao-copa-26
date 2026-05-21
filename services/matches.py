@@ -195,14 +195,18 @@ def refresh_cache() -> int:
     resp.raise_for_status()
     
     data = resp.json()
-    matches = data.get("matches", [])
+    matches_raw = data.get("matches", [])
     
-    # Define quando o cache vai vencer (Inteligência Dinâmica)
-    ttl = _calculate_dynamic_ttl(matches)
+    # 1. ORDENA CRONOLOGICAMENTE ANTES DE DAR O ID
+    # Isso garante que a ordem 1 a 104 vai ser idêntica à antiga API
+    matches_raw.sort(key=lambda x: x.get("utcDate", "9999-12-31T23:59:59Z"))
+    
+    # Define quando o cache vai vencer
+    ttl = _calculate_dynamic_ttl(matches_raw)
     _cache_expires_at = time.time() + ttl
     
-    enriched = [_enrich_match(m, i) for i, m in enumerate(matches)]
-    enriched.sort(key=lambda x: (x["datetime_brt"] or "9999-12-31T23:59:59"))
+    # 2. Enriquece os jogos (agora sim, o enumerate vai dar ids 1, 2, 3...)
+    enriched = [_enrich_match(m, i) for i, m in enumerate(matches_raw)]
     
     _memory_cache = enriched
     return len(enriched)

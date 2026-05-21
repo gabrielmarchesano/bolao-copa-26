@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 # CONFIGURAÇÃO DA API FOOTBALL-DATA
 # ============================================================================
 SOURCE_URL = "https://api.football-data.org/v4/competitions/WC/matches"
-API_TOKEN = "COLOQUE_SEU_TOKEN_AQUI"  # Substitua pelo token que você gerou no site!
+API_TOKEN = "ec7fdc85b0164a999885259b3c72a0c6"  # Substitua pelo token que você gerou no site!
 
 BRT = timezone(timedelta(hours=-3))
 

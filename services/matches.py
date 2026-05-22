@@ -56,8 +56,8 @@ COUNTRY_FLAGS: Dict[str, str] = {
     # África
     "Morocco": "ma", "Senegal": "sn", "Tunisia": "tn", "Algeria": "dz",
     "Egypt": "eg", "Ivory Coast": "ci", "Côte d'Ivoire": "ci", "Ghana": "gh",
-    "Nigeria": "ng", "Cameroon": "cm", "South Africa": "za", "Cape Verde": "cv", 
-    "Cabo Verde": "cpv", "DR Congo": "cd", "Congo DR": "cd", "Congo": "cg", 
+    "Nigeria": "ng", "Cameroon": "cm", "South Africa": "za", "Cape Verde Islands": "cv", 
+    "Cabo Verde": "cv", "DR Congo": "cd", "Congo DR": "cd", "Congo": "cg", 
     "Mali": "ml", "Zambia": "zm", "Burkina Faso": "bf", "Guinea": "gn",
     
     # Ásia e Oceania

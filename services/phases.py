@@ -37,16 +37,16 @@ BRT = timezone(timedelta(hours=-3))
 _ROUND_TO_PHASE: Dict[str, str] = {
     "Round of 32": "r32",
     "Round of 16": "r16",
-    "Quarter-final": "qf",
-    "Semi-final": "sf",
-    "Match for third place": "third",
+    "Quarter-finals": "qf",
+    "Semi-finals": "sf",
+    "Play-off for third place": "third",
     "Final": "final",
 }
 
 PHASE_LABELS: Dict[str, str] = {
     "groups": "Fase de Grupos",
-    "r32": "Oitavas de 32",
-    "r16": "Oitavas de 16",
+    "r32": "16 avos de Final",
+    "r16": "Oitavas de Final",
     "qf": "Quartas de Final",
     "sf": "Semifinais",
     "third": "Disputa do 3º Lugar",

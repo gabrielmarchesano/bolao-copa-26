@@ -1075,8 +1075,33 @@
       </div>
 
       <div data-subpanel="mine"></div>
-      <div data-subpanel="discover" hidden></div>
-      <div data-subpanel="requests" hidden></div>
+      <div data-subpanel="discover" hidden>
+        <div style="background: #fff; padding: 20px; border-radius: 12px; border: 1px solid var(--divider); margin-bottom: 20px;">
+          <h3 style="font-size:16px; font-weight:800; color:var(--navy); margin-bottom:6px;">Tem um código de convite?</h3>
+          <p class="modal-sub">Insira o código exato para entrar diretamente no bolão.</p>
+          <div style="display: flex; gap: 10px; margin-top: 12px;">
+            <input type="text" id="inputInviteCode" placeholder="Ex: COPA-AX592" style="flex: 1; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-weight:700; text-transform:uppercase;">
+            <button onclick="joinViaCode()" class="btn-modal primary">Entrar</button>
+          </div>
+        </div>
+
+        <div style="background: #fff; padding: 20px; border-radius: 12px; border: 1px solid var(--divider);">
+          <h3 style="font-size:16px; font-weight:800; color:var(--navy); margin-bottom:6px;">Explorar Bolões</h3>
+          <p class="modal-sub">Busque torneios abertos ou privados criados pela comunidade.</p>
+          <div class="search-box" style="margin-top: 14px;">
+            <input type="text" id="searchBolaoInput" placeholder="Digite o nome do bolão..." onkeypress="if(event.key==='Enter') searchBoloes()">
+            <button onclick="searchBoloes()" class="btn-modal secondary">Buscar</button>
+          </div>
+          <div id="discoverBoloesList" style="display: flex; flex-direction: column;">
+            </div>
+        </div>
+      </div>
+
+      <div data-subpanel="requests" hidden>
+        <div id="incomingRequestsList" style="display: flex; flex-direction: column;">
+            <div class="calendar-empty">Carregando...</div>
+        </div>
+      </div>
     </div>
 
     <div id="bolaoDetailContainer" hidden>
@@ -1246,6 +1271,29 @@
       <div class="modal-actions">
         <button type="button" class="btn-modal secondary" data-close-modal>Cancelar</button>
         <button type="submit" class="btn-modal primary">Entrar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+<div class="modal-backdrop" id="modalJoinRequest">
+  <div class="modal">
+    <h2 id="joinReqTitle">Entrar no Bolão</h2>
+    <p class="modal-sub" id="joinReqSub">Preencha seus dados para participar.</p>
+    <form id="formJoinRequest" novalidate>
+      <input type="hidden" id="joinReqBolaoId">
+      <div class="form-group">
+        <label>Seu codinome</label>
+        <input type="text" id="joinReqCodinome" placeholder="Ex: Roger Machado" required />
+      </div>
+      <div class="form-group" id="joinReqMessageGroup">
+        <label>Mensagem para o dono (opcional)</label>
+        <input type="text" id="joinReqMessage" placeholder="Ex: Sou do time de T.I." />
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-modal secondary" data-close-modal>Cancelar</button>
+        <button type="submit" class="btn-modal primary" id="btnSubmitJoinReq">Enviar</button>
       </div>
     </form>
   </div>
@@ -1881,7 +1929,7 @@ function updateTimerDisplay(){
    Forms & Modals
    ============================================================ */
 function openModal(n){ 
-  const idMap = { 'create':'modalCreate', 'join':'modalJoin', 'edit':'modalEdit' };
+  const idMap = { 'create':'modalCreate', 'join':'modalJoin', 'edit':'modalEdit', 'joinReq': 'modalJoinRequest' };
   document.getElementById(idMap[n]).classList.add('open'); 
 }
 function closeModal(el){ el.classList.remove('open'); }
@@ -2107,6 +2155,189 @@ async function saveExtraGuesses(bolaoId) {
         showToast(e.message || "Erro desconhecido");
     }
 }
+
+/* ============================================================
+   Aba Descobrir (Busca e Join via Código)
+   ============================================================ */
+async function renderDiscoverPanel() {
+    searchBoloes(); // Faz uma busca vazia para mostrar os top bolões
+}
+
+async function searchBoloes() {
+    const query = document.getElementById('searchBolaoInput').value.trim();
+    const listDiv = document.getElementById('discoverBoloesList');
+    listDiv.innerHTML = '<div class="calendar-empty">Buscando...</div>';
+
+    try {
+        const r = await authFetch(`/boloes/search?q=${encodeURIComponent(query)}`);
+        if (!r.ok) throw new Error('Erro na busca');
+        const results = await r.json();
+
+        if (results.length === 0) {
+            listDiv.innerHTML = '<div class="calendar-empty">Nenhum bolão encontrado.</div>';
+            return;
+        }
+
+        listDiv.innerHTML = results.map(b => {
+            let actionBtn = '';
+            // A mágica: Decide o botão com base na visibilidade e se já enviou pedido
+            if (b.has_pending_request) {
+                actionBtn = `<button class="btn-modal secondary" disabled style="opacity:0.5; cursor:not-allowed;">Pendente</button>`;
+            } else if (b.visibility === 'public') {
+                actionBtn = `<button onclick="openJoinRequestModal(${b.id}, '${escapeHtml(b.name)}', 'public')" class="btn-modal primary">Participar</button>`;
+            } else {
+                actionBtn = `<button onclick="openJoinRequestModal(${b.id}, '${escapeHtml(b.name)}', 'private')" class="btn-modal secondary">Pedir para Entrar</button>`;
+            }
+
+            const visBadge = b.visibility === 'public' 
+                ? `<span class="vis-badge vis-public">PÚBLICO</span>` 
+                : `<span class="vis-badge vis-private">PRIVADO</span>`;
+
+            return `
+            <div class="search-result">
+                <div>
+                    <div class="name">${escapeHtml(b.name)}</div>
+                    <div class="meta">${visBadge} ${b.members_count} participante(s)</div>
+                </div>
+                <div>${actionBtn}</div>
+            </div>
+            `;
+        }).join('');
+    } catch (e) {
+        listDiv.innerHTML = '<div class="calendar-empty">Erro ao buscar bolões.</div>';
+    }
+}
+
+// Entrar via Código Direto (Invites)
+async function joinViaCode() {
+    const code = document.getElementById('inputInviteCode').value.trim();
+    if (!code) return showToast('Digite um código de convite!');
+    
+    const codinome = prompt("Escolha seu codinome para este bolão:");
+    if (!codinome) return;
+
+    try {
+        const r = await authFetch('/boloes/join', {
+            method: 'POST',
+            body: JSON.stringify({ invite_code: code, codinome: codinome })
+        });
+        if (!r.ok) {
+            const err = await r.json();
+            throw new Error(err.detail || 'Erro ao entrar.');
+        }
+        showToast('Você entrou no bolão!');
+        document.getElementById('inputInviteCode').value = '';
+        activateTab('torneios'); // Recarrega e volta pra lista de Meus Bolões
+        loadMyBoloes();
+    } catch(e) { alert(e.message); }
+}
+
+// Abre o Modal de Pedir pra Entrar (Busca)
+function openJoinRequestModal(bolaoId, bolaoName, visibility) {
+    document.getElementById('joinReqBolaoId').value = bolaoId;
+    document.getElementById('joinReqCodinome').value = '';
+    document.getElementById('joinReqMessage').value = '';
+
+    const title = document.getElementById('joinReqTitle');
+    const btn = document.getElementById('btnSubmitJoinReq');
+    const msgGroup = document.getElementById('joinReqMessageGroup');
+
+    if (visibility === 'public') {
+        title.textContent = `Entrar em: ${bolaoName}`;
+        btn.textContent = 'Entrar Agora';
+        msgGroup.style.display = 'none'; // Públicos não precisam de mensagem
+    } else {
+        title.textContent = `Solicitar entrada: ${bolaoName}`;
+        btn.textContent = 'Enviar Solicitação';
+        msgGroup.style.display = 'block';
+    }
+    openModal('joinReq');
+}
+
+// Submete a Requisição de Entrada
+document.getElementById('formJoinRequest').onsubmit = async (e) => {
+    e.preventDefault();
+    const bolaoId = document.getElementById('joinReqBolaoId').value;
+    const codinome = document.getElementById('joinReqCodinome').value.trim();
+    const message = document.getElementById('joinReqMessage').value.trim();
+
+    try {
+        const r = await authFetch(`/boloes/${bolaoId}/join-requests`, {
+            method: 'POST',
+            body: JSON.stringify({ codinome, message })
+        });
+        if (!r.ok) {
+            const err = await r.json();
+            throw new Error(err.detail || 'Erro ao enviar solicitação.');
+        }
+        
+        const data = await r.json();
+        closeModal(document.getElementById('modalJoinRequest'));
+
+        if (data.status === 'accepted') {
+            showToast('Você entrou no bolão!');
+            activateTab('torneios');
+            loadMyBoloes();
+        } else {
+            showToast('Solicitação enviada ao dono!');
+            searchBoloes(); // Atualiza a lista pra ficar "Pendente"
+        }
+    } catch(err) { alert(err.message); }
+};
+
+/* ============================================================
+   Aba Solicitações (Para o dono aceitar/recusar)
+   ============================================================ */
+async function loadIncomingRequests() {
+    const panel = document.getElementById('incomingRequestsList');
+    panel.innerHTML = '<div class="calendar-empty">Carregando solicitações...</div>';
+    
+    try {
+        const r = await authFetch('/boloes/join-requests/incoming');
+        if (!r.ok) throw new Error();
+        const reqs = await r.json();
+
+        // Atualiza a bolinha vermelha da aba
+        const badge = document.getElementById('reqCount');
+        if (badge) {
+            badge.textContent = reqs.length;
+            badge.hidden = reqs.length === 0;
+        }
+
+        if (reqs.length === 0) {
+            panel.innerHTML = '<div class="stub" style="margin-top:20px;"><h2>Nenhum pedido</h2><p>Você não tem solicitações pendentes nos seus bolões.</p></div>';
+            return;
+        }
+
+        panel.innerHTML = reqs.map(req => `
+            <div class="search-result" style="grid-template-columns: 1fr auto auto;">
+                <div>
+                    <div class="name">${escapeHtml(req.user_name)} <span style="font-weight:600; color:var(--muted); font-size:12px;">(Codinome: ${escapeHtml(req.codinome)})</span></div>
+                    <div class="meta">Bolão: <b>${escapeHtml(req.bolao_name)}</b></div>
+                    ${req.message ? `<div style="margin-top:8px; font-size:12px; font-style:italic; background:var(--bg-soft); padding:8px 12px; border-radius:6px; color:var(--navy-ink);">"${escapeHtml(req.message)}"</div>` : ''}
+                </div>
+                <button onclick="respondRequest(${req.id}, 'reject')" class="btn-modal secondary" style="color:var(--danger)">Recusar</button>
+                <button onclick="respondRequest(${req.id}, 'accept')" class="btn-modal primary" style="background:var(--success)">Aceitar</button>
+            </div>
+        `).join('');
+    } catch(e) {
+        panel.innerHTML = '<div class="calendar-empty">Erro ao carregar solicitações.</div>';
+    }
+}
+
+async function respondRequest(reqId, action) {
+    try {
+        const r = await authFetch(`/boloes/join-requests/${reqId}/respond`, {
+            method: 'POST',
+            body: JSON.stringify({ action })
+        });
+        if (!r.ok) throw new Error('Erro ao responder');
+        
+        showToast(action === 'accept' ? 'Solicitação aceita!' : 'Solicitação recusada.');
+        loadIncomingRequests(); // Atualiza a lista na tela
+    } catch(e) { alert(e.message); }
+}
+
 
 // Init
 // --- ROTINA DE INICIALIZAÇÃO (O "Despertador" do F5) ---

@@ -50,14 +50,14 @@ COUNTRY_FLAGS: Dict[str, str] = {
     "Poland": "pl", "Norway": "no", "Sweden": "se", "Czech Republic": "cz",
     "Czechia": "cz", "Serbia": "rs", "Scotland": "gb-sct", "Wales": "gb-wls",
     "Turkey": "tr", "Ukraine": "ua", "Ireland": "ie", "Northern Ireland": "gb-nir",
-    "Bosnia and Herzegovina": "ba", "Bosnia": "ba", "Slovakia": "sk", "Slovenia": "si",
+    "Bosnia-Herzegovina": "ba", "Bosnia": "ba", "Slovakia": "sk", "Slovenia": "si",
     "Greece": "gr", "Romania": "ro", "Hungary": "hu", "Iceland": "is", "Finland": "fi",
     
     # África
     "Morocco": "ma", "Senegal": "sn", "Tunisia": "tn", "Algeria": "dz",
     "Egypt": "eg", "Ivory Coast": "ci", "Côte d'Ivoire": "ci", "Ghana": "gh",
     "Nigeria": "ng", "Cameroon": "cm", "South Africa": "za", "Cape Verde": "cv", 
-    "Cabo Verde": "cv", "DR Congo": "cd", "Congo DR": "cd", "Congo": "cg", 
+    "Cabo Verde": "cpv", "DR Congo": "cd", "Congo DR": "cd", "Congo": "cg", 
     "Mali": "ml", "Zambia": "zm", "Burkina Faso": "bf", "Guinea": "gn",
     
     # Ásia e Oceania
@@ -88,7 +88,7 @@ COUNTRY_PT: Dict[str, str] = {
     "Portugal": "Portugal", "Italy": "Itália", "Wales": "País de Gales", 
     "Ireland": "Irlanda", "Northern Ireland": "Irlanda do Norte",
     "Poland": "Polônia", "Ukraine": "Ucrânia", 
-    "Bosnia and Herzegovina": "Bósnia e Herzegovina", "Bosnia": "Bósnia",
+    "Bosnia-Herzegovina": "Bósnia e Herzegovina", "Bosnia": "Bósnia",
     "Slovakia": "Eslováquia", "Slovenia": "Eslovênia", "Greece": "Grécia",
     "Romania": "Romênia", "Hungary": "Hungria", "Iceland": "Islândia", "Finland": "Finlândia",
     

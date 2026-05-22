@@ -35,49 +35,83 @@ _cache_expires_at: float = 0
 # Mapeamento país → código ISO para flagcdn.com
 # ============================================================================
 COUNTRY_FLAGS: Dict[str, str] = {
+    # Américas
     "Brazil": "br", "Argentina": "ar", "Uruguay": "uy", "Paraguay": "py",
     "Ecuador": "ec", "Colombia": "co", "Venezuela": "ve", "Chile": "cl",
     "Peru": "pe", "Bolivia": "bo",
     "USA": "us", "United States": "us", "Canada": "ca", "Mexico": "mx",
     "Haiti": "ht", "Panama": "pa", "Costa Rica": "cr", "Honduras": "hn", "Jamaica": "jm",
+    "El Salvador": "sv", "Trinidad and Tobago": "tt",
+    
+    # Europa
     "France": "fr", "Germany": "de", "Spain": "es", "Portugal": "pt",
     "Italy": "it", "England": "gb-eng", "Netherlands": "nl", "Belgium": "be",
     "Croatia": "hr", "Denmark": "dk", "Switzerland": "ch", "Austria": "at",
     "Poland": "pl", "Norway": "no", "Sweden": "se", "Czech Republic": "cz",
     "Czechia": "cz", "Serbia": "rs", "Scotland": "gb-sct", "Wales": "gb-wls",
-    "Turkey": "tr", "Ukraine": "ua", "Ireland": "ie",
+    "Turkey": "tr", "Ukraine": "ua", "Ireland": "ie", "Northern Ireland": "gb-nir",
+    "Bosnia and Herzegovina": "ba", "Bosnia": "ba", "Slovakia": "sk", "Slovenia": "si",
+    "Greece": "gr", "Romania": "ro", "Hungary": "hu", "Iceland": "is", "Finland": "fi",
+    
+    # África
     "Morocco": "ma", "Senegal": "sn", "Tunisia": "tn", "Algeria": "dz",
     "Egypt": "eg", "Ivory Coast": "ci", "Côte d'Ivoire": "ci", "Ghana": "gh",
-    "Nigeria": "ng", "Cameroon": "cm", "South Africa": "za", "Cape Verde": "cv", "Curaçao": "cw",
+    "Nigeria": "ng", "Cameroon": "cm", "South Africa": "za", "Cape Verde": "cv", 
+    "Cabo Verde": "cv", "DR Congo": "cd", "Congo DR": "cd", "Congo": "cg", 
+    "Mali": "ml", "Zambia": "zm", "Burkina Faso": "bf", "Guinea": "gn",
+    
+    # Ásia e Oceania
     "Japan": "jp", "South Korea": "kr", "Iran": "ir", "Saudi Arabia": "sa",
     "Qatar": "qa", "Australia": "au", "New Zealand": "nz", "Jordan": "jo",
-    "Uzbekistan": "uz", "Iraq": "iq",
+    "Uzbekistan": "uz", "Iraq": "iq", "United Arab Emirates": "ae", "UAE": "ae",
+    "Oman": "om", "Syria": "sy", "Bahrain": "bh", "China PR": "cn", "China": "cn",
+    
+    # Outros (Placeholder)
+    "Curaçao": "cw",
 }
 
 COUNTRY_PT: Dict[str, str] = {
+    # Américas
     "Brazil": "Brasil", "Argentina": "Argentina", "Mexico": "México",
     "USA": "Estados Unidos", "United States": "Estados Unidos",
-    "South Africa": "África do Sul", "South Korea": "Coreia do Sul",
+    "Canada": "Canadá", "Uruguay": "Uruguai", "Paraguay": "Paraguai",
+    "Ecuador": "Equador", "Colombia": "Colômbia", "Haiti": "Haiti",
+    "El Salvador": "El Salvador", "Trinidad and Tobago": "Trinidad e Tobago",
+    
+    # Europa
     "Germany": "Alemanha", "France": "França", "Spain": "Espanha",
     "England": "Inglaterra", "Netherlands": "Holanda", "Belgium": "Bélgica",
     "Switzerland": "Suíça", "Austria": "Áustria", "Croatia": "Croácia",
     "Denmark": "Dinamarca", "Norway": "Noruega", "Sweden": "Suécia",
     "Czech Republic": "República Tcheca", "Czechia": "República Tcheca",
     "Serbia": "Sérvia", "Scotland": "Escócia", "Turkey": "Turquia",
-    "Morocco": "Marrocos", "Senegal": "Senegal", "Tunisia": "Tunísia",
-    "Algeria": "Argélia", "Egypt": "Egito", "Ivory Coast": "Costa do Marfim",
+    "Portugal": "Portugal", "Italy": "Itália", "Wales": "País de Gales", 
+    "Ireland": "Irlanda", "Northern Ireland": "Irlanda do Norte",
+    "Poland": "Polônia", "Ukraine": "Ucrânia", 
+    "Bosnia and Herzegovina": "Bósnia e Herzegovina", "Bosnia": "Bósnia",
+    "Slovakia": "Eslováquia", "Slovenia": "Eslovênia", "Greece": "Grécia",
+    "Romania": "Romênia", "Hungary": "Hungria", "Iceland": "Islândia", "Finland": "Finlândia",
+    
+    # África
+    "South Africa": "África do Sul", "Morocco": "Marrocos", "Senegal": "Senegal", 
+    "Tunisia": "Tunísia", "Algeria": "Argélia", "Egypt": "Egito", 
+    "Ivory Coast": "Costa do Marfim", "Côte d'Ivoire": "Costa do Marfim",
     "Ghana": "Gana", "Nigeria": "Nigéria", "Cameroon": "Camarões",
-    "Cape Verde": "Cabo Verde", "Curaçao": "Curaçao",
-    "Japan": "Japão", "Iran": "Irã", "Saudi Arabia": "Arábia Saudita",
-    "Qatar": "Catar", "Australia": "Austrália", "New Zealand": "Nova Zelândia",
-    "Jordan": "Jordânia", "Portugal": "Portugal", "Italy": "Itália",
-    "Canada": "Canadá", "Uruguay": "Uruguai", "Paraguay": "Paraguai",
-    "Ecuador": "Equador", "Colombia": "Colômbia", "Haiti": "Haiti",
-    "Wales": "País de Gales", "Ireland": "Irlanda",
-    "Poland": "Polônia", "Ukraine": "Ucrânia",
-    "Iraq": "Iraque", "Uzbekistan": "Uzbequistão",
+    "Cape Verde Islands": "Cabo Verde", "Cabo Verde": "Cabo Verde",
+    "DR Congo": "RD Congo", "Congo DR": "RD Congo", "Congo": "Congo",
+    "Mali": "Mali", "Zambia": "Zâmbia", "Burkina Faso": "Burkina Faso", "Guinea": "Guiné",
+    
+    # Ásia e Oceania
+    "South Korea": "Coreia do Sul", "Japan": "Japão", "Iran": "Irã", 
+    "Saudi Arabia": "Arábia Saudita", "Qatar": "Catar", "Australia": "Austrália", 
+    "New Zealand": "Nova Zelândia", "Jordan": "Jordânia",
+    "Iraq": "Iraque", "Uzbekistan": "Uzbequistão", "United Arab Emirates": "Emirados Árabes",
+    "UAE": "Emirados Árabes", "Oman": "Omã", "Syria": "Síria", "Bahrain": "Bahrein",
+    "China PR": "China", "China": "China",
+    
+    # Outros
+    "Curaçao": "Curaçao",
 }
-
 
 def _pt(name: str) -> str:
     """Nome do país em PT-BR, ou o original se não mapeado."""

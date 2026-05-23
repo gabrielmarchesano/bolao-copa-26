@@ -342,7 +342,7 @@ def _enrich_match(raw: dict, idx: int) -> dict:
         "id": idx + 1,
         "round": mapped_round,
         "group": group_str,
-        "ground": MATCH_VENUES.get(raw.get("id"), "A definir"), # A nova API não envia o estádio facilmente no tier grátis
+        "ground": MATCH_VENUES.get(id, "A definir"), # A nova API não envia o estádio facilmente no tier grátis
         "date_raw": dt_brt.strftime("%Y-%m-%d"),
         "time_raw": dt_brt.strftime("%H:%M"),
         "datetime_brt": dt_brt.isoformat(),

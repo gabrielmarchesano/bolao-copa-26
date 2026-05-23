@@ -112,6 +112,153 @@ COUNTRY_PT: Dict[str, str] = {
     # Outros
     "Curaçao": "Curaçao",
 }
+MATCH_VENUES: Dict[int, str] = {
+    # ---------------- FASE DE GRUPOS (jogos 1–72) ----------------
+    # Qui, 11/jun
+    1:  "Estádio Azteca (Cidade do México)",
+    2:  "Estádio Akron (Guadalajara)",
+    # Sex, 12/jun
+    3:  "BMO Field (Toronto)",
+    4:  "SoFi Stadium (Los Angeles)",
+    # Sáb, 13/jun
+    5:  "Levi's Stadium (San Francisco)",
+    6:  "MetLife Stadium (Nova Jersey)",
+    7:  "Gillette Stadium (Boston)",
+    8:  "BC Place (Vancouver)",
+    # Dom, 14/jun
+    9:  "NRG Stadium (Houston)",
+    10: "AT&T Stadium (Dallas)",
+    11: "Lincoln Financial Field (Filadélfia)",
+    12: "Estádio BBVA (Monterrey)",
+    # Seg, 15/jun
+    13: "Mercedes-Benz Stadium (Atlanta)",
+    14: "BC Place (Vancouver)",
+    15: "Hard Rock Stadium (Miami)",
+    16: "SoFi Stadium (Los Angeles)",
+    # Ter, 16/jun
+    17: "MetLife Stadium (Nova Jersey)",
+    18: "Gillette Stadium (Boston)",
+    19: "Arrowhead Stadium (Kansas City)",
+    20: "Levi's Stadium (San Francisco)",
+    # Qua, 17/jun
+    21: "NRG Stadium (Houston)",
+    22: "AT&T Stadium (Dallas)",
+    23: "BMO Field (Toronto)",
+    24: "Estádio Azteca (Cidade do México)",
+    # Qui, 18/jun
+    25: "Mercedes-Benz Stadium (Atlanta)",
+    26: "SoFi Stadium (Los Angeles)",
+    27: "BC Place (Vancouver)",
+    28: "Estádio Akron (Guadalajara)",
+    # Sex, 19/jun
+    29: "Lumen Field (Seattle)",
+    30: "Gillette Stadium (Boston)",
+    31: "Lincoln Financial Field (Filadélfia)",
+    32: "Levi's Stadium (San Francisco)",
+    # Sáb, 20/jun
+    33: "NRG Stadium (Houston)",
+    34: "BMO Field (Toronto)",
+    35: "Arrowhead Stadium (Kansas City)",
+    36: "Estádio BBVA (Monterrey)",
+    # Dom, 21/jun
+    37: "Mercedes-Benz Stadium (Atlanta)",
+    38: "SoFi Stadium (Los Angeles)",
+    39: "Hard Rock Stadium (Miami)",
+    40: "BC Place (Vancouver)",
+    # Seg, 22/jun
+    41: "AT&T Stadium (Dallas)",
+    42: "Lincoln Financial Field (Filadélfia)",
+    43: "MetLife Stadium (Nova Jersey)",
+    44: "Levi's Stadium (San Francisco)",
+    # Ter, 23/jun
+    45: "NRG Stadium (Houston)",
+    46: "Gillette Stadium (Boston)",
+    47: "BMO Field (Toronto)",
+    48: "Estádio Akron (Guadalajara)",
+    # Qua, 24/jun
+    49: "BC Place (Vancouver)",
+    50: "Lumen Field (Seattle)",
+    51: "Hard Rock Stadium (Miami)",
+    52: "Mercedes-Benz Stadium (Atlanta)",
+    53: "Estádio Azteca (Cidade do México)",
+    54: "Estádio BBVA (Monterrey)",
+    # Qui, 25/jun
+    55: "MetLife Stadium (Nova Jersey)",
+    56: "Lincoln Financial Field (Filadélfia)",
+    57: "AT&T Stadium (Dallas)",
+    58: "Arrowhead Stadium (Kansas City)",
+    59: "SoFi Stadium (Los Angeles)",
+    60: "Levi's Stadium (San Francisco)",
+    # Sex, 26/jun
+    61: "Gillette Stadium (Boston)",
+    62: "BMO Field (Toronto)",
+    63: "NRG Stadium (Houston)",
+    64: "Estádio Akron (Guadalajara)",
+    65: "Lumen Field (Seattle)",
+    66: "BC Place (Vancouver)",
+    # Sáb, 27/jun
+    67: "MetLife Stadium (Nova Jersey)",
+    68: "Lincoln Financial Field (Filadélfia)",
+    69: "Hard Rock Stadium (Miami)",
+    70: "Mercedes-Benz Stadium (Atlanta)",
+    71: "Arrowhead Stadium (Kansas City)",
+    72: "AT&T Stadium (Dallas)",
+ 
+    # ---------------- ROUND OF 32 (jogos 73–88) ----------------
+    # Dom, 28/jun
+    73: "SoFi Stadium (Los Angeles)",
+    # Seg, 29/jun
+    74: "NRG Stadium (Houston)",
+    75: "Gillette Stadium (Boston)",
+    76: "Estádio BBVA (Monterrey)",
+    # Ter, 30/jun
+    77: "AT&T Stadium (Dallas)",
+    78: "MetLife Stadium (Nova Jersey)",
+    79: "Estádio Azteca (Cidade do México)",
+    # Qua, 01/jul
+    80: "Mercedes-Benz Stadium (Atlanta)",
+    81: "Lumen Field (Seattle)",
+    82: "Levi's Stadium (San Francisco)",
+    # Qui, 02/jul
+    83: "SoFi Stadium (Los Angeles)",
+    84: "BMO Field (Toronto)",
+    85: "BC Place (Vancouver)",
+    # Sex, 03/jul
+    86: "AT&T Stadium (Dallas)",
+    87: "Hard Rock Stadium (Miami)",
+    88: "Arrowhead Stadium (Kansas City)",
+ 
+    # ---------------- ROUND OF 16 (jogos 89–96) ----------------
+    # Sáb, 04/jul
+    89: "NRG Stadium (Houston)",
+    90: "Lincoln Financial Field (Filadélfia)",
+    # Dom, 05/jul
+    91: "MetLife Stadium (Nova Jersey)",
+    92: "Estádio Azteca (Cidade do México)",
+    # Seg, 06/jul
+    93: "AT&T Stadium (Dallas)",
+    94: "Lumen Field (Seattle)",
+    # Ter, 07/jul
+    95: "Mercedes-Benz Stadium (Atlanta)",
+    96: "BC Place (Vancouver)",
+ 
+    # ---------------- QUARTAS DE FINAL (jogos 97–100) ----------------
+    97:  "Gillette Stadium (Boston)",       # Qui, 09/jul
+    98:  "SoFi Stadium (Los Angeles)",      # Sex, 10/jul
+    99:  "Hard Rock Stadium (Miami)",       # Sáb, 11/jul
+    100: "Arrowhead Stadium (Kansas City)", # Sáb, 11/jul
+ 
+    # ---------------- SEMIFINAIS (jogos 101–102) ----------------
+    101: "AT&T Stadium (Dallas)",           # Ter, 14/jul
+    102: "Mercedes-Benz Stadium (Atlanta)", # Qua, 15/jul
+ 
+    # ---------------- DISPUTA DE 3º LUGAR (jogo 103) ----------------
+    103: "Hard Rock Stadium (Miami)",       # Sáb, 18/jul
+ 
+    # ---------------- FINAL (jogo 104) ----------------
+    104: "MetLife Stadium (Nova Jersey)",   # Dom, 19/jul
+}
+ 
 
 def _pt(name: str) -> str:
     """Nome do país em PT-BR, ou o original se não mapeado."""
@@ -189,13 +336,13 @@ def _enrich_match(raw: dict, idx: int) -> dict:
     # Tratamento de string do Grupo (Ex: "GROUP_A" -> "Group A")
     raw_group = raw.get("group")
     group_str = raw_group.replace("_", " ").title() if raw_group else ""
-    ground = raw.get("venue") or "A definir"
+   
     # Retorna o dicionário exatamente como o Frontend (app.html) espera ler
     return {
         "id": idx + 1,
         "round": mapped_round,
         "group": group_str,
-        "ground": ground, # A nova API não envia o estádio facilmente no tier grátis
+        "ground": MATCH_VENUES.get(raw.get("id"), "A definir"), # A nova API não envia o estádio facilmente no tier grátis
         "date_raw": dt_brt.strftime("%Y-%m-%d"),
         "time_raw": dt_brt.strftime("%H:%M"),
         "datetime_brt": dt_brt.isoformat(),

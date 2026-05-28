@@ -48,7 +48,7 @@ TOKEN_EXPIRE_HOURS = int(os.getenv("TOKEN_EXPIRE_HOURS", "24"))
 # Token fixo pra endpoints de admin (registrar resultado de jogo).
 # Em produção: troca por uma role no User (is_admin) ou RBAC completo.
 ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "admin-dev-token-troque-isso")
-GOOGLE_CLIENT_ID = "601426753056-4oadkgpe5kt9iglcbqnbsa2ret0bt9po.apps.googleusercontent.com"
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "601426753056-4oadkgpe5kt9iglcbqnbsa2ret0bt9po.apps.googleusercontent.com")
 # ----------------------------------------------------------------------------
 # Hashing
 # ----------------------------------------------------------------------------

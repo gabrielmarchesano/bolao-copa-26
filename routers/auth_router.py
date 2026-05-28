@@ -6,6 +6,8 @@ ROTAS:
   POST /auth/login   → retorna JWT
   GET  /auth/me      → retorna dados do user logado
 """
+import os
+
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session, select
@@ -16,13 +18,13 @@ from pydantic import BaseModel
 from database import get_db
 from models import User
 from schemas import Token, UserCreate, UserRead
-
+import os
 # APIRouter é como um "mini-app" que depois é plugado no FastAPI principal.
 # O `prefix` evita repetir "/auth" em cada rota. `tags` agrupa no Swagger UI.
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-GOOGLE_CLIENT_ID = "601426753056-4oadkgpe5kt9iglcbqnbsa2ret0bt9po.apps.googleusercontent.com"
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "601426753056-4oadkgpe5kt9iglcbqnbsa2ret0bt9po.apps.googleusercontent.com")
 
 class GoogleLoginPayload(BaseModel):
     credential: str

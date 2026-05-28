@@ -10,5 +10,5 @@ jinja2>=3.1
 # Driver Postgres — só é usado se DATABASE_URL apontar pra postgres://
 # Em dev local (SQLite), a dependência fica instalada mas inerte.
 psycopg2-binary>=2.9
-
+google-auth>=2.53.0
 

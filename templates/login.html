@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Bolão da Copa 2026 — Entre e faça seu bolão</title>
-
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <!-- Fontes -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -359,7 +359,27 @@
               <input type="password" name="password" placeholder="SENHA" autocomplete="current-password" required />
             </div>
             <button type="submit" class="btn-submit">ENTRAR</button>
-            <div class="links">
+            
+            <div style="text-align: center; margin: 20px 0 10px; font-size: 13px; color: var(--muted); font-weight: 600;">Ou entre com</div>
+
+            <div id="g_id_onload"
+                 data-client_id="601426753056-4oadkgpe5kt9iglcbqnbsa2ret0bt9po.apps.googleusercontent.com"
+                 data-context="signin"
+                 data-ux_mode="popup"
+                 data-callback="handleGoogleLogin"
+                 data-auto_prompt="false">
+            </div>
+
+            <div class="g_id_signin"
+                 data-type="standard"
+                 data-shape="rectangular"
+                 data-theme="outline"
+                 data-text="signin_with"
+                 data-size="large"
+                 data-logo_alignment="center"
+                 style="display: flex; justify-content: center;">
+            </div>
+            <div class="links" style="margin-top: 24px;">
               <a href="#forgot">Esqueceu a senha?</a>
             </div>
           </form>
@@ -470,6 +490,36 @@
     const data = await r.json();
     localStorage.setItem('bolao_token', data.access_token);
     window.location.href = buildAppUrl();
+  }
+
+
+  async function handleGoogleLogin(response) {
+      const googleToken = response.credential;
+      
+      try {
+          // Chama a rota que você criou no backend (Ajuste a URL se sua rota tiver um prefixo diferente, ex: /api/auth/google)
+          const r = await fetch('/auth/google', { 
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ credential: googleToken })
+          });
+          
+          if (!r.ok) {
+              const err = await r.json().catch(() => ({}));
+              throw new Error(err.detail || "Falha na autenticação via Google");
+          }
+          
+          const data = await r.json();
+          
+          // Salva o token do seu app no LocalStorage (igual ao seu login normal)
+          localStorage.setItem('bolao_token', data.access_token);
+          
+          // Redireciona o usuário (aproveitando sua função que mantém o código de convite)
+          window.location.href = buildAppUrl();
+          
+      } catch (e) {
+          alert(e.message);
+      }
   }
 
   document.getElementById('loginForm').addEventListener('submit', async function(e){

@@ -34,7 +34,8 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlmodel import Session, select
-
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
 from database import get_db
 from models import Membership, User
 
@@ -47,7 +48,7 @@ TOKEN_EXPIRE_HOURS = int(os.getenv("TOKEN_EXPIRE_HOURS", "24"))
 # Token fixo pra endpoints de admin (registrar resultado de jogo).
 # Em produção: troca por uma role no User (is_admin) ou RBAC completo.
 ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "admin-dev-token-troque-isso")
-
+GOOGLE_CLIENT_ID = "601426753056-4oadkgpe5kt9iglcbqnbsa2ret0bt9po.apps.googleusercontent.com"
 # ----------------------------------------------------------------------------
 # Hashing
 # ----------------------------------------------------------------------------

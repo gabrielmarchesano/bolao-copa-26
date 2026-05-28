@@ -9,8 +9,10 @@ ROTAS:
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session, select
-
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
 from auth import create_access_token, get_current_user, hash_password, verify_password
+from pydantic import BaseModel
 from database import get_db
 from models import User
 from schemas import Token, UserCreate, UserRead
@@ -18,6 +20,57 @@ from schemas import Token, UserCreate, UserRead
 # APIRouter é como um "mini-app" que depois é plugado no FastAPI principal.
 # O `prefix` evita repetir "/auth" em cada rota. `tags` agrupa no Swagger UI.
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+GOOGLE_CLIENT_ID = "601426753056-4oadkgpe5kt9iglcbqnbsa2ret0bt9po.apps.googleusercontent.com"
+
+class GoogleLoginPayload(BaseModel):
+    credential: str
+
+@router.post("/google")
+def login_with_google(payload: GoogleLoginPayload, db: Session = Depends(get_db)):
+    """Recebe o token do frontend, valida no Google e gera o token do nosso app."""
+    try:
+        # Pede pro Google validar se o token não foi forjado
+        idinfo = id_token.verify_oauth2_token(
+            payload.credential, 
+            google_requests.Request(), 
+            GOOGLE_CLIENT_ID
+        )
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Token do Google inválido ou expirado.")
+
+    email = idinfo.get("email")
+    nome_completo = idinfo.get("name", "Usuário")
+
+    if not email:
+        raise HTTPException(status_code=400, detail="O e-mail do Google não foi fornecido.")
+
+    # 1. Verifica se o usuário já existe no nosso banco de dados
+    user = db.exec(select(User).where(User.email == email)).first()
+
+    # 2. Se não existir, fazemos o "cadastro invisível" na hora
+    if not user:
+        user = User(
+            email=email,
+            full_name=nome_completo,
+            password_hash="google_sso" # Não tem senha, ele loga pelo Google
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+    # 3. Gera o JWT do NOSSO sistema para a sessão dele
+    access_token = create_access_token(data={"sub": user.email})
+    
+    return {
+        "access_token": access_token, 
+        "token_type": "bearer", 
+        "user_id": user.id,
+        "name": user.full_name
+    }
+
+
 
 
 # ----------------------------------------------------------------------------

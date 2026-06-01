@@ -23,7 +23,6 @@ import os
 # O `prefix` evita repetir "/auth" em cada rota. `tags` agrupa no Swagger UI.
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "601426753056-4oadkgpe5kt9iglcbqnbsa2ret0bt9po.apps.googleusercontent.com")
 
 class GoogleLoginPayload(BaseModel):
@@ -61,10 +60,10 @@ def login_with_google(payload: GoogleLoginPayload, db: Session = Depends(get_db)
         db.add(user)
         db.commit()
         db.refresh(user)
-
+ 
     # 3. Gera o JWT do NOSSO sistema para a sessão dele
     access_token = create_access_token(data={"sub": user.email})
-    
+
     return {
         "access_token": access_token, 
         "token_type": "bearer", 
@@ -97,7 +96,7 @@ def signup(payload: UserCreate, db: Session = Depends(get_db)):
     Se faltar campo ou tipo errado → retorna 422 sem chegar aqui.
     """
     # Verifica duplicata
-    existing = db.exec(select(User).where(User.email == payload.email)).first()
+    existing = db.exec(select(User).where(User.email == payload.email and User.password_hash != "google_sso")).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email já cadastrado.")
 

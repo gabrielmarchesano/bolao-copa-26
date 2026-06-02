@@ -49,7 +49,8 @@ class Membership(SQLModel, table=True):
     bolao_id: int = Field(foreign_key="bolao.id", index=True)
     codinome: str = Field(max_length=40)
     joined_at: datetime = Field(default_factory=datetime.utcnow)
-
+    last_position: int = Field(default=0)
+    
     user: "User" = Relationship(back_populates="memberships")
     bolao: "Bolao" = Relationship(back_populates="memberships")
     guesses: List["Guess"] = Relationship(

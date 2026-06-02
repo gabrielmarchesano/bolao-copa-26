@@ -1195,6 +1195,12 @@
       </div>
 
       <div data-bolao-panel="ranking" hidden>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 style="margin: 0; color: var(--navy);">Classificação</h3>
+            <button id="btnGenerateTable" class="btn-modal primary" style="display: none; padding: 6px 12px; font-size: 13px; background: #25D366; border-color: #25D366;">
+                Copiar p/ WhatsApp
+            </button>
+        </div>
         <div id="rankingContainer"></div>
       </div>
     </div>
@@ -1683,30 +1689,89 @@ function activateBolaoTab(tabName, isRestoring = false) {
   }
 }
 
-async function loadRanking(bolaoId, bolaoName){
-  const container = document.getElementById('rankingContainer');
-  if (!container) return;
-  container.innerHTML = `<div class="calendar-empty">Carregando ranking…</div>`;
-  try {
-    const r = await authFetch(`/boloes/${bolaoId}/ranking`);
-    if (!r.ok) throw new Error('Erro ao carregar ranking');
-    const rows = await r.json();
-    container.innerHTML = `
-      <div class="bolao-list">
-        ${rows.map(row => {
-          const realNameBadge = row.real_name ? `<span style="font-size:10px; background:var(--navy-soft); color:var(--navy); padding:2px 6px; border-radius:4px; margin-left:6px; letter-spacing:0.5px;">${row.real_name}</span>` : '';
-          return `
-          <div class="bolao-row">
-            <div>
-              <div class="title">${row.position}º · ${row.codinome} ${realNameBadge}</div>
-              <div class="sub">${row.guesses_count} palpite(s) registrado(s)</div>
+async function loadRanking(bolaoId, bolaoName) {
+    const container = document.getElementById('rankingContainer');
+    if (!container) return;
+    
+    container.innerHTML = `<div class="calendar-empty">Carregando ranking…</div>`;
+    
+    try {
+        const r = await authFetch(`/boloes/${bolaoId}/ranking`);
+        if (!r.ok) throw new Error('Erro ao carregar ranking');
+        const rows = await r.json();
+
+        // TRUQUE: O backend só manda 'real_name' se você for o dono.
+        const isHost = rows.length > 0 && rows[0].real_name !== null;
+
+        // Salva os dados para a função do WhatsApp conseguir acessar
+        window.currentRankingData = rows;
+
+        // 1. Cria o botão do WhatsApp separado
+        const whatsappBtn = isHost ? `
+            <button onclick="gerarTabelaWhatsApp('${escapeHtml(bolaoName)}')" class="btn-modal primary" style="background: #25D366; border-color: #25D366; padding: 8px 14px; font-size: 12px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; margin-left: auto;">
+                📲 Copiar p/ WhatsApp
+            </button>
+        ` : '';
+
+        // 2. Cria a lista de jogadores separada (sem aninhar crases)
+        const listaHtml = rows.map((row) => {
+            const realNameBadge = row.real_name ? `<span style="font-size:10px; background:var(--navy-soft); color:var(--navy); padding:2px 6px; border-radius:4px; margin-left:6px; letter-spacing:0.5px;">${row.real_name}</span>` : '';
+            
+            const change = row.rank_change || 0;
+            let arrowHtml = '<span style="color:var(--muted); font-size:12px; margin-left:6px;" title="Manteve a posição">➖</span>';
+            
+            if (change > 0) {
+                arrowHtml = `<span style="color:var(--success); font-size:12px; margin-left:6px; font-weight:800;" title="Subiu">▲ ${change}</span>`;
+            } else if (change < 0) {
+                arrowHtml = `<span style="color:var(--danger); font-size:12px; margin-left:6px; font-weight:800;" title="Caiu">▼ ${Math.abs(change)}</span>`;
+            }
+
+            return `
+                <div class="bolao-row">
+                    <div>
+                        <div class="title">${row.position}º · ${row.codinome} ${arrowHtml} ${realNameBadge}</div>
+                        <div class="sub">${row.guesses_count} palpite(s) registrado(s)</div>
+                    </div>
+                    <div class="pts">${row.total_points} pts</div>
+                </div>
+            `;
+        }).join('');
+
+        // 3. Junta tudo no container final
+        container.innerHTML = `
+            ${whatsappBtn}
+            <div class="bolao-list">
+                ${listaHtml}
             </div>
-            <div class="pts">${row.total_points} pts</div>
-          </div>
-        `}).join('')}
-      </div>
-    `;
-  } catch(err){ container.innerHTML = `<div class="calendar-empty">Erro: ${err.message}</div>`; }
+        `;
+        
+    } catch(err) { 
+        container.innerHTML = `<div class="calendar-empty">Erro: ${err.message}</div>`; 
+    }
+}
+function gerarTabelaWhatsApp(bolaoName) {
+    const ranking = window.currentRankingData || [];
+    let text = `🏆 *RANKING: ${bolaoName}* 🏆\n\n`;
+
+    ranking.forEach((row) => {
+        const name = row.codinome || "Usuário";
+        const pts = row.total_points;
+        const change = row.rank_change || 0;
+
+        let seta = "➖";
+        if (change > 0) seta = `🟢 (+${change})`;
+        else if (change < 0) seta = `🔴 (${change})`;
+
+        text += `${row.position}º | ${name} - ${pts} pts ${seta}\n`;
+    });
+
+    text += `\n⚽ Acesse o app para palpitar na próxima rodada!`;
+
+    navigator.clipboard.writeText(text).then(() => {
+        showToast("Tabela copiada para o WhatsApp!");
+    }).catch(err => {
+        alert("Erro ao copiar a tabela. Tente novamente.");
+    });
 }
 
 /* ============================================================

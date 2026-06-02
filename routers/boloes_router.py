@@ -471,28 +471,57 @@ def ranking(
             User.full_name,
             (func.coalesce(func.sum(Guess.points), 0) + func.coalesce(ExtraGuess.points, 0)).label("total_points"),
             func.count(Guess.id).label("guesses_count"),
+            Membership.last_position,
         )
         .join(User, User.id == Membership.user_id)
         .join(Guess, Guess.membership_id == Membership.id, isouter=True)
         .join(ExtraGuess, ExtraGuess.membership_id == Membership.id, isouter=True)
         .where(Membership.bolao_id == bolao_id)
-        .group_by(Membership.id, Membership.codinome, User.full_name, ExtraGuess.points)
+        .group_by(Membership.id, Membership.codinome, User.full_name, ExtraGuess.points, Membership.last_position)
         .order_by((func.coalesce(func.sum(Guess.points), 0) + func.coalesce(ExtraGuess.points, 0)).desc())
     )
     rows = db.exec(stmt).all()
 
-    return [
-        schemas.RankingRow(
-            membership_id=row[0],
-            codinome=row[1],
-            real_name=row[2] if is_owner else None,
-            total_points=int(row[3] or 0),
-            guesses_count=int(row[4] or 0),
-            position=i + 1,
-        )
-        for i, row in enumerate(rows)
-    ]
+    ranking_list = []
+    needs_commit = False
 
+    for i, row in enumerate(rows):
+        membership_id = row[0]
+        current_position = i + 1
+        last_position = int(row[5] or 0)
+
+        # Lógica da setinha e inicialização do banco
+        if last_position == 0:
+            rank_change = 0  # Sem seta (neutro) na primeira vez
+            
+            # Busca o membro no banco e inicializa a posição dele
+            m = db.get(Membership, membership_id)
+            if m:
+                m.last_position = current_position
+                db.add(m)
+                needs_commit = True
+        else:
+            # Ex: Era 2º, agora é 1º -> (2 - 1) = +1 (Sobe)
+            # Ex: Era 1º, agora é 3º -> (1 - 3) = -2 (Cai)
+            rank_change = last_position - current_position
+
+        ranking_list.append(
+            schemas.RankingRow(
+                membership_id=membership_id,
+                codinome=row[1],
+                real_name=row[2] if is_owner else None,
+                total_points=int(row[3] or 0),
+                guesses_count=int(row[4] or 0),
+                position=current_position,
+                rank_change=rank_change  # <--- ENVIANDO PARA O FRONTEND
+            )
+        )
+
+    # Se alguém estava com posição 0, salva as alterações no banco de uma vez só
+    if needs_commit:
+        db.commit()
+
+    return ranking_list
 # ============================================================================
 # POST /boloes/{id}/join-requests — solicitar entrada
 # ============================================================================

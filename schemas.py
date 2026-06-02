@@ -115,6 +115,7 @@ class RankingRow(SQLModel):
     total_points: int
     guesses_count: int
     position: int
+    rank_change: int = 0
 
 
 # ============================================================================

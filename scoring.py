@@ -124,7 +124,7 @@ def calculate_match_points(
 
     # ─── 1. Placar exato? ───
     if guess_s1 == real_s1 and guess_s2 == real_s2:
-        base_points = 4
+        base_points = 5
         # Jogo foi pra pênaltis E user palpitou quem vence nos pênaltis?
         # Só penaliza se o user de fato chutou um pen_winner (>0); se não
         # chutou (=0), tratamos como "não sabia que era mata-mata" e damos

@@ -1834,33 +1834,28 @@ function renderPhaseContent() {
   const phaseData = _guessState.data.phases[_guessState.activePhase];
   const myGuesses = _guessState.data.my_guesses;
 
-  //  REGRA 1: FASE FUTURA (Ainda não começou)
-  // Se não pode palpitar ainda (can_guess = false) E o timer não venceu (is_locked = false)
-  // Mostra apenas a mensagem "em breve" e RETORNA (esconde completamente os jogos "TBD x TBD").
+  // A aba só mostra "Em breve" se a fase inteira ainda estiver fechada (can_guess = false)
   if (!phaseData || (!phaseData.can_guess && !phaseData.is_locked)) {
     container.innerHTML = `<div class="lock-banner" style="background:#E8F4FF; color:var(--navy);">⏰ Palpites abrem em breve.</div>`;
     return; 
   }
-
-  //  REGRA 2: FASE TRANCADA (Timer bateu o limite)
-  // Como is_locked é true, o código passa direto pelo 'if' acima e cai aqui.
-  // Ele define um banner avisando que encerrou (sem a frase "em breve") e DESENHA os cards.
-  const lockBanner = phaseData.is_locked ? `<div class="lock-banner">🔒 Palpites encerrados.</div>` : '';
   
   let body = '';
+  
+  // MUDANÇA: Passamos "m.is_locked" que veio do Backend para cada card renderizado!
   if (_guessState.activePhase === 'groups' && phaseData.groups){
     body = Object.keys(phaseData.groups).sort().map(g => `
       <div class="group-heading">${g}</div>
-      ${phaseData.groups[g].map(m => renderGuessCard(m, myGuesses[m.id], phaseData.is_locked, _guessState.activePhase)).join('')}
+      ${phaseData.groups[g].map(m => renderGuessCard(m, myGuesses[m.id], m.is_locked, _guessState.activePhase)).join('')}
     `).join('');
   } else if (phaseData.matches){
-    body = phaseData.matches.map(m => renderGuessCard(m, myGuesses[m.id], phaseData.is_locked, _guessState.activePhase)).join('');
+    body = phaseData.matches.map(m => renderGuessCard(m, myGuesses[m.id], m.is_locked, _guessState.activePhase)).join('');
   }
 
-  // Renderiza o aviso (se tiver) + os cards travados na tela
-  container.innerHTML = lockBanner + body;
+  container.innerHTML = body;
   bindGuessInputs();
 }
+
 
 function renderGuessCard(match, myGuess, phaseLocked, phaseKey){
   const g = myGuess || { score1: '', score2: '', pen_winner: 0, points: 0, locked: false };

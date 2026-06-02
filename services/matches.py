@@ -297,6 +297,10 @@ def _enrich_match(raw: dict, idx: int) -> dict:
     # 1. Ajuste de fuso horário
     utc_dt = datetime.fromisoformat(raw["utcDate"].replace("Z", "+00:00"))
     dt_brt = utc_dt.astimezone(BRT)
+
+    now_brt = datetime.now(BRT)
+    cutoff_time = dt_brt - timedelta(hours=1)
+    is_locked = now_brt >= cutoff_time
     
     # 2. Extração dos times (Lida com TBD)
     home_team = raw.get("homeTeam", {}).get("name") or "TBD"
@@ -346,6 +350,7 @@ def _enrich_match(raw: dict, idx: int) -> dict:
         "date_raw": dt_brt.strftime("%Y-%m-%d"),
         "time_raw": dt_brt.strftime("%H:%M"),
         "datetime_brt": dt_brt.isoformat(),
+        "is_locked": is_locked,
         "team1": {
             "name_en": home_team,
             "name_pt": _pt(home_team),

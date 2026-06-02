@@ -108,51 +108,10 @@ def calculate_match_points(
     Returns:
         Pontuação do palpite (int >= 0).
 
-    Exemplos:
-        >>> calculate_match_points(2, 1, 2, 1)             # placar exato, grupos
-        3
-        >>> calculate_match_points(2, 1, 3, 0)             # só vencedor, grupos
-        1
-        >>> calculate_match_points(1, 1, 1, 1, "Final")    # placar exato, final
-        15
-        >>> calculate_match_points(1, 1, 1, 1, "Semi-finals",
-        ...                        guess_pen_winner=1, real_pen_winner=1)
-        12  # placar exato + acertou pen → 3 × 4 = 12
-        >>> calculate_match_points(1, 1, 1, 1, "Semi-finals",
-        ...                        guess_pen_winner=1, real_pen_winner=2)
-        8   # placar exato + errou pen → floor(2/3 × 3 × 4) = floor(8.0) = 8
+ 
     """
     weight = _phase_weight(match_round)
 
-    # ─── 1. Placar exato? ───
-    if guess_s1 == real_s1 and guess_s2 == real_s2:
-        points = 3 * weight
-        # Jogo foi pra pênaltis E user palpitou quem vence nos pênaltis?
-        # Só penaliza se o user de fato chutou um pen_winner (>0); se não
-        # chutou (=0), tratamos como "não sabia que era mata-mata" e damos
-        # pontos cheios — decisão de produto para não punir user desavisado.
-        if real_pen_winner != 0 and guess_pen_winner != 0:
-            if guess_pen_winner == real_pen_winner:
-                return 3 * weight  # Acertou placar exato + acertou pen_winner → pontuação cheia
-            
-            return 3 * max(1, weight - 1)
-        
-        return points
-
-
-        
-
-    # ─── 2. Ambos empates, placares diferentes (ex: 1×1 palpite, 2×2 real) ───
-    if guess_s1 == guess_s2 and real_s1 == real_s2:
-        if real_pen_winner != 0 and guess_pen_winner != 0:
-            if guess_pen_winner == real_pen_winner:
-                return 1* weight  # Errou empate + acertou pen_winner 
-            return 1* max(1, weight - 1)  # Errou empate  e errou pen_winner 
-        return 1 * weight
-
-
-
-    # ─── 3. Acertou só quem venceu (fora empate) ───
     def _winner(s1: int, s2: int) -> int:
         if s1 > s2:
             return 1
@@ -160,10 +119,53 @@ def calculate_match_points(
             return 2
         return 0
 
-    if _winner(guess_s1, guess_s2) == _winner(real_s1, real_s2) != 0:
-        return 1 * weight
+    g_winner = _winner(guess_s1, guess_s2)
+    r_winner = _winner(real_s1, real_s2)
 
-    # ─── 4. Errou tudo ───
+    # ─── 1. Placar exato? ───
+    if guess_s1 == real_s1 and guess_s2 == real_s2:
+        base_points = 4
+        # Jogo foi pra pênaltis E user palpitou quem vence nos pênaltis?
+        # Só penaliza se o user de fato chutou um pen_winner (>0); se não
+        # chutou (=0), tratamos como "não sabia que era mata-mata" e damos
+        # pontos cheios — decisão de produto para não punir user desavisado.
+        if real_pen_winner != 0 and guess_pen_winner != 0:
+            if guess_pen_winner == real_pen_winner:
+                return base_points * weight  # Acertou placar exato + acertou pen_winner → pontuação cheia
+            
+            return max (1, (weight - 1))* base_points  # Acertou placar exato + errou pen_winner → penaliza peso (mínimo 1×)
+        
+        return base_points * weight
+
+
+        
+    
+    if g_winner == 0 and r_winner == 0:
+        base_points = 3
+        if real_pen_winner != 0 and guess_pen_winner != 0:
+            if guess_pen_winner == real_pen_winner:
+                return base_points * weight  # Errou empate + acertou pen_winner 
+            return base_points* max(1, weight - 1)  # Errou empate  e errou pen_winner 
+        return base_points* weight
+
+
+
+    if g_winner == r_winner and g_winner != 0:
+        base_points = 2
+
+        if guess_s1 == real_s1 or guess_s2 == real_s2:
+            base_points += 1  # Acertou vencedor e um dos placares (ex: palpite 2×0, real 2×1)
+        
+        elif abs((guess_s1 - guess_s2) ==  abs(real_s1 - real_s2)):
+            base_points += 1  # Acertou vencedor e placares próximos (ex: palpite 2×0, real 3×1)
+        
+        return base_points * weight
+
+    if guess_s1 == real_s1 or guess_s2 == real_s2:
+        base_points = 1  # Acertou só vencedor/empate (placar ≠) ou um dos placares certos
+        return base_points * weight
+        
+    
     return 0
 
 

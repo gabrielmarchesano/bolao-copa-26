@@ -478,7 +478,7 @@ def ranking(
         .join(ExtraGuess, ExtraGuess.membership_id == Membership.id, isouter=True)
         .where(Membership.bolao_id == bolao_id)
         .group_by(Membership.id, Membership.codinome, User.full_name, ExtraGuess.points, Membership.last_position)
-        .order_by((func.coalesce(func.sum(Guess.points), 0) + func.coalesce(ExtraGuess.points, 0)).desc())
+        .order_by((func.coalesce(func.sum(Guess.points), 0) + func.coalesce(ExtraGuess.points, 0)).desc(), Membership.codinome.asc())
     )
     rows = db.exec(stmt).all()
 

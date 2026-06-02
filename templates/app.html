@@ -1764,19 +1764,25 @@ function renderPhaseTabs(){
   });
 }
 
-function renderPhaseContent(){
+function renderPhaseContent() {
   const container = document.getElementById('phaseContent');
   const phaseData = _guessState.data.phases[_guessState.activePhase];
   const myGuesses = _guessState.data.my_guesses;
 
+  //  REGRA 1: FASE FUTURA (Ainda não começou)
+  // Se não pode palpitar ainda (can_guess = false) E o timer não venceu (is_locked = false)
+  // Mostra apenas a mensagem "em breve" e RETORNA (esconde completamente os jogos "TBD x TBD").
   if (!phaseData || (!phaseData.can_guess && !phaseData.is_locked)) {
     container.innerHTML = `<div class="lock-banner" style="background:#E8F4FF; color:var(--navy);">⏰ Palpites abrem em breve.</div>`;
-    return;
+    return; 
   }
 
+  //  REGRA 2: FASE TRANCADA (Timer bateu o limite)
+  // Como is_locked é true, o código passa direto pelo 'if' acima e cai aqui.
+  // Ele define um banner avisando que encerrou (sem a frase "em breve") e DESENHA os cards.
   const lockBanner = phaseData.is_locked ? `<div class="lock-banner">🔒 Palpites encerrados.</div>` : '';
+  
   let body = '';
-
   if (_guessState.activePhase === 'groups' && phaseData.groups){
     body = Object.keys(phaseData.groups).sort().map(g => `
       <div class="group-heading">${g}</div>
@@ -1786,6 +1792,7 @@ function renderPhaseContent(){
     body = phaseData.matches.map(m => renderGuessCard(m, myGuesses[m.id], phaseData.is_locked, _guessState.activePhase)).join('');
   }
 
+  // Renderiza o aviso (se tiver) + os cards travados na tela
   container.innerHTML = lockBanner + body;
   bindGuessInputs();
 }

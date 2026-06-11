@@ -403,6 +403,14 @@ def get_all_matches() -> List[dict]:
     global _memory_cache
     if not _memory_cache or time.time() > _cache_expires_at:
         refresh_cache()
+    now_brt = datetime.now(BRT)
+    for m in _memory_cache:
+        if m.get("datetime_brt"):
+            dt_brt = datetime.fromisoformat(m["datetime_brt"])
+            cutoff_time = dt_brt - timedelta(hours=1)
+            # Sobrescreve o status antigo do cache com a realidade do segundo atual
+            m["is_locked"] = now_brt >= cutoff_time
+
     return _memory_cache
 
 

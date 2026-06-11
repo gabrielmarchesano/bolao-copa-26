@@ -308,7 +308,7 @@ def _enrich_match(raw: dict, idx: int) -> dict:
     
     # 3. Tratamento de placares e ganhador de pênaltis
     score_obj = raw.get("score", {})
-    ft = score_obj.get("fullTime", {}) or {}
+    ft = score_obj.get("fullTime", {}) or score_obj.get("regularTime") or score_obj.get("halfTime") or {}
     pen = score_obj.get("penalties", {}) or {}
     
     # O fullTime da Football-Data já inclui a prorrogação

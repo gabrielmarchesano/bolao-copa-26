@@ -47,7 +47,15 @@ def get_extra_guesses(
         raise HTTPException(404, "Você não participa deste bolão.")
         
     extra = db.exec(select(ExtraGuess).where(ExtraGuess.membership_id == membership.id)).first()
-    return extra or {}
+    return {
+        "campeao": extra.campeao if extra else "",
+        "artilheiro": extra.artilheiro if extra else "",
+        "melhor_jogador": extra.melhor_jogador if extra else "",
+        "is_locked": has_tournament_started(),   # <-- única linha nova
+    }
+
+
+
 
 @router.post("/{bolao_id}/extra-guesses")
 def save_extra_guesses(

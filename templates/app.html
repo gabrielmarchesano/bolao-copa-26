@@ -2240,7 +2240,7 @@ async function loadExtraGuesses(bolaoId) {
     document.getElementById('guessCampeao').value = '';
     document.getElementById('guessArtilheiro').value = '';
     document.getElementById('guessMelhorJogador').value = '';
-
+    let isLocked = false;
     try {
         const r = await authFetch(`/boloes/${bolaoId}/extra-guesses`);
         if (r.ok) {
@@ -2248,6 +2248,7 @@ async function loadExtraGuesses(bolaoId) {
             document.getElementById('guessCampeao').value = data.campeao || '';
             document.getElementById('guessArtilheiro').value = data.artilheiro || '';
             document.getElementById('guessMelhorJogador').value = data.melhor_jogador || '';
+            isLocked = data.is_locked || false;
         }
     } catch (e) { console.warn("Erro ao carregar bônus", e); }
 
@@ -2255,18 +2256,23 @@ async function loadExtraGuesses(bolaoId) {
     const inputs = ['guessCampeao', 'guessArtilheiro', 'guessMelhorJogador'];
     inputs.forEach(inputId => {
         const el = document.getElementById(inputId);
-        if (el) {
-            el.oninput = () => {
-                clearTimeout(_extraGuessTimer);
-                
-                // Pega o ID global do bolão que está aberto na tela AGORA
-                const idCerto = window.currentBolaoId; 
-                if (!idCerto) return; // Se por algum motivo não tiver ID, nem tenta salvar
-                
-                _extraGuessTimer = setTimeout(() => saveExtraGuesses(idCerto), 800);
-            };
-        }
+        if (!el) return;
+        el.disabled = isLocked;                          // <-- trava o campo
+        el.oninput = isLocked ? null : () => {           // <-- sem autosave se travado
+            clearTimeout(_extraGuessTimer);
+            const idCerto = window.currentBolaoId;
+            if (!idCerto) return;
+            _extraGuessTimer = setTimeout(() => saveExtraGuesses(idCerto), 800);
+        };
     });
+
+    // Estado visual acinzentado (reusa o padrão .locked, opacity .55)
+    const container = document.getElementById('extraGuessesContainer');
+    if (container) {
+        container.style.opacity = isLocked ? '0.55' : '1';
+        const hint = container.querySelector('div > span:last-child');
+        if (hint) hint.textContent = isLocked ? 'Encerrado' : 'Até o início da Copa';
+    }
 }
 
 async function saveExtraGuesses(bolaoId) {

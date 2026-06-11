@@ -87,6 +87,14 @@ def create_access_token(user_id: int) -> str:
     payload = {"sub": str(user_id), "exp": expire}
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
+def create_reset_token(email: str) -> str:
+    """
+    Gera um JWT exclusivo para redefinição de senha.
+    Válido por 15 minutos e contendo o email e a flag 'type': 'reset'.
+    """
+    expire = datetime.now(timezone.utc) + timedelta(minutes=15)
+    payload = {"sub": email, "type": "reset", "exp": expire}
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 def get_current_user(
     token: str = Depends(oauth2_scheme),

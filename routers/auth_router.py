@@ -17,7 +17,7 @@ from sqlmodel import Session, select
 from jose import jwt, JWTError
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
-from auth import create_access_token, get_current_user, hash_password, verify_password, SECRET_KEY, ALGORITHM
+from auth import create_access_token, create_reset_token, get_current_user, hash_password, verify_password, SECRET_KEY, ALGORITHM
 from pydantic import BaseModel
 from database import get_db
 from models import User
@@ -166,19 +166,15 @@ def forgot_password(
     db: Session = Depends(get_db)
 ):
     user = db.exec(select(User).where(User.email == payload.email)).first()
-    
-    if user and user.password_hash != "google_sso":
-        reset_token = create_access_token(
-            data={"sub": user.email, "type": "reset"}, 
-            expires_delta=timedelta(minutes=15)
-        )
+    reset_token = create_reset_token(user.email)
+   
         
         # ⚠️ Quando for pro Render, mude localhost para https://seusite.onrender.com
-        base_url = "https://bolaocopa26-9swz.onrender.com" 
-        reset_link = f"{base_url}/reset.html?token={reset_token}"
+    base_url = "https://bolaocopa26-9swz.onrender.com" 
+    reset_link = f"{base_url}/reset.html?token={reset_token}"
         
         # 🟢 Substitui o print antigo por esta linha mágica:
-        background_tasks.add_task(send_reset_email, user.email, reset_link)
+    background_tasks.add_task(send_reset_email, user.email, reset_link)
 
     return {"status": "ok", "message": "Se o e-mail existir, enviaremos as instruções."}
 

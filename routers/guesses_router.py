@@ -12,7 +12,7 @@ REGRA DE LOCK (NOVA):
   Ex: palpites da fase de grupos fecham quando o 1º jogo da fase começa.
   Não é mais 15min antes de cada jogo individual (versão anterior).
 """
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
@@ -59,22 +59,21 @@ def _validate_guess_payload(payload: GuessCreate, match: dict) -> None:
         if payload.pen_winner not in (1, 2):
             raise HTTPException(400, "pen_winner deve ser 0, 1 ou 2.")
 
-    # Fase está aberta pra palpites?
-    phase_key = get_phase_key(match.get("round"))
-    if not is_phase_guessable(phase_key):
+    # LOCK INDIVIDUAL: palpite fecha 1h antes do kickoff DESTE jogo.
+    # Usa o datetime_brt do próprio match (fonte: API). Recalculado a cada
+    # request com datetime.now, então o cache dinâmico não interfere.
+    dt_str = match.get("datetime_brt")
+    if not dt_str:
+        raise HTTPException(400, "Jogo sem data definida — palpite indisponível.")
+
+    dt_brt = datetime.fromisoformat(dt_str)
+    now = datetime.now(dt_brt.tzinfo)
+    cutoff = dt_brt - timedelta(hours=1)
+    if now >= cutoff:
         raise HTTPException(
             status_code=400,
-            detail=f"Palpites para esta fase ainda não estão disponíveis (fase ainda não foi formada).",
+            detail="Palpites para este jogo estão encerrados (fecha 1h antes do início).",
         )
-
-    # Lock da fase já aconteceu?
-    if is_match_phase_locked(match.get("round")):
-        raise HTTPException(
-            status_code=400,
-            detail=f"Palpites desta fase estão encerrados (fase já começou).",
-        )
-
-
 # ----------------------------------------------------------------------------
 # POST — criar ou atualizar palpite (upsert)
 # ----------------------------------------------------------------------------
@@ -190,14 +189,26 @@ def guessable(
     phases = get_matches_grouped_for_guessing()
 
     results_db = db.exec(select(MatchResult)).all()
-    official_results = {
-        r.match_id: {
+    all_matches = get_all_matches()
+    official_results = {}
+    for m in all_matches:
+        # Base: o que a API trouxe (real_s1/real_s2 do _enrich_match)
+        if m.get("real_s1") is not None and m.get("real_s2") is not None:
+            official_results[m["id"]] = {
+                "score1": m["real_s1"],
+                "score2": m["real_s2"],
+                "pen_winner": m.get("real_pen_winner", 0),
+            }
+
+    # Override: tudo que está no MatchResult (injeção manual do admin) vence
+    results_db = db.exec(select(MatchResult)).all()
+    for r in results_db:
+        official_results[r.match_id] = {
             "score1": r.score1,
             "score2": r.score2,
-            "pen_winner": r.pen_winner
+            "pen_winner": r.pen_winner,
         }
-        for r in results_db
-    }
+
 
     return {
         "my_guesses": my_guesses, 

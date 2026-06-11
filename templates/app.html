@@ -1869,8 +1869,8 @@ function renderGuessCard(match, myGuess, phaseLocked, phaseKey){
   const official = _guessState.data.official_results && _guessState.data.official_results[match.id];
   
   // Decide qual placar usar: o do Admin (prioridade) ou o da API Externa
-  const realScore1 = official ? official.score1 : match.score1;
-  const realScore2 = official ? official.score2 : match.score2;
+  const realScore1 = official ? official.score1 : match.s1;
+  const realScore2 = official ? official.score2 : match.s2;
 
   // Verifica se acabou baseado no placar real
   const isFinished = realScore1 !== null && realScore1 !== undefined;

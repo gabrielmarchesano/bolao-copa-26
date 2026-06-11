@@ -348,8 +348,7 @@
           <button class="tab-btn" data-tab="signup" role="tab" aria-selected="false">Cadastrar</button>
         </div>
 
-        <div class="auth-panels">
-          <!-- LOGIN -->
+<div class="auth-panels">
           <form class="panel active" data-panel="login" id="loginForm" autocomplete="on" novalidate>
             <h2 class="panel-title">Entre e faça<br>seu bolão</h2>
             <div class="field">
@@ -360,10 +359,11 @@
             </div>
             <button type="submit" class="btn-submit">ENTRAR</button>
             
-          
-
-            <form class="panel" data-panel="forgot" id="forgotForm" autocomplete="off" novalidate>
-            <h2 class="panel-title"> Esqueceu a senha? </h2>
+            <div class="links" style="margin-top: 16px;">
+              <a href="#" data-switch="forgot">Esqueceu a senha?</a>
+            </div>
+          </form> <form class="panel" data-panel="forgot" id="forgotForm" autocomplete="off" novalidate>
+            <h2 class="panel-title" style="font-size: 18px;">Recuperar Senha</h2>
             <p style="text-align: center; color: var(--muted); font-size: 13px; margin-bottom: 20px;">
               Digite seu e-mail e enviaremos um link para você criar uma nova senha.
             </p>
@@ -372,10 +372,7 @@
             </div>
             
             <button type="submit" class="btn-submit">ENVIAR LINK</button>
-            <div class="links">
-              <span>Lembrou a senha? <a href="#" data-switch="login"><b>Voltar</b></a></span>
-            </div>
-          </form>
+            
           </form>
 
           <!-- CADASTRO -->

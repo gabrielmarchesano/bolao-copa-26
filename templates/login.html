@@ -362,17 +362,22 @@
             <div class="links" style="margin-top: 16px;">
               <a href="#" data-switch="forgot">Esqueceu a senha?</a>
             </div>
-          </form> <form class="panel" data-panel="forgot" id="forgotForm" autocomplete="off" novalidate>
+          <form class="panel" data-panel="forgot" id="forgotForm" autocomplete="off" novalidate>
             <h2 class="panel-title" style="font-size: 18px;">Recuperar Senha</h2>
             <p style="text-align: center; color: var(--muted); font-size: 13px; margin-bottom: 20px;">
-              Digite seu e-mail e enviaremos um link para você criar uma nova senha.
+              Digite seu e-mail cadastrado e escolha sua nova senha.
             </p>
             <div class="field">
               <input type="email" name="email" placeholder="SEU EMAIL" required />
             </div>
+            <div class="field">
+              <input type="password" name="new_password" placeholder="NOVA SENHA" required minlength="6" />
+            </div>
             
-            <button type="submit" class="btn-submit">ENVIAR LINK</button>
-            
+            <button type="submit" class="btn-submit">ALTERAR SENHA</button>
+            <div class="links">
+              <span>Lembrou a senha? <a href="#" data-switch="login"><b>Voltar</b></a></span>
+            </div>
           </form>
 
           <!-- CADASTRO -->
@@ -525,57 +530,38 @@
 document.getElementById('forgotForm').addEventListener('submit', async function(e){
     e.preventDefault();
     const btn = this.querySelector('.btn-submit') || this.querySelector('button');
-    const originalText = btn.innerText;
-    
-    btn.innerText = "A ENVIAR...";
+    btn.innerText = "ALTERANDO...";
     btn.disabled = true;
 
     try {
-        const emailDigitado = this.email.value.trim();
-        
-        // Faz o pedido ao backend
-        const r = await fetch('/auth/forgot-password', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ email: emailDigitado })
-        });
+      const r = await fetch('/auth/reset-password-direct', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ 
+          email: this.email.value.trim(),
+          new_password: this.new_password.value
+        })
+      });
 
-        // Extrai o JSON da resposta independentemente de ser erro ou sucesso
-        const data = await r.json().catch(() => ({}));
+      const data = await r.json().catch(() => ({}));
+      
+      if (!r.ok) throw new Error(data.detail || 'Erro ao redefinir a senha.');
 
-        if (!r.ok) {
-            // Se for erro 422 do FastAPI, o "detail" é um array de objetos
-            let erroMsg = data.detail;
-            if (Array.isArray(erroMsg)) {
-                erroMsg = "Erro de validação: Verifique se o e-mail está num formato correto.";
-            }
-            throw new Error(erroMsg || 'Erro ao pedir a recuperação de palavra-passe.');
-        }
-
-        // Sucesso! Mostramos apenas a string da mensagem, evitando o [object Object]
-        alert(data.message || 'Instruções enviadas com sucesso! Verifique o e-mail ou a consola.');
-        
-        // Limpa o formulário e regressa ao ecrã de login
-        this.reset();
-        
-        // Tenta voltar ao login usando a função que já tiver definida
-        if (typeof switchPanel === 'function') {
-            switchPanel('login');
-        } else {
-            const btnLogin = document.querySelector('.tab-btn[data-tab="login"]');
-            if (btnLogin) btnLogin.click();
-        }
+      alert("Senha alterada com sucesso! Agora é só entrar.");
+      this.reset();
+      
+      // Simula o clique no botão de voltar para o login
+      const linkVoltar = this.querySelector('[data-switch="login"]');
+      if(linkVoltar) linkVoltar.click();
 
     } catch(err) {
-        // Se ainda assim der erro, mostramos o texto exato da falha
-        alert(err.message);
-        console.error("Detalhe do erro:", err);
+      alert(err.message);
     } finally {
-        btn.innerText = originalText;
-        btn.disabled = false;
+      btn.innerText = "ALTERAR SENHA";
+      btn.disabled = false;
     }
-});
-
+  });
+  
 </script>
 </body>
 </html>

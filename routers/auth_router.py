@@ -239,3 +239,24 @@ def send_reset_email(to_email: str, reset_link: str):
         print(f"✅ E-mail enviado com sucesso para {to_email}")
     except Exception as e:
         print(f"❌ Erro ao enviar e-mail: {e}")
+
+
+@router.post("/reset-password-direct")
+def reset_password_direct(payload: ResetPasswordRequest, db: Session = Depends(get_db)):
+    """Troca a senha na hora usando apenas o e-mail (Sem PIN e Sem Token)."""
+    user = db.exec(select(User).where(User.email == payload.email)).first()
+    
+    # Se não achar o e-mail, avisa o usuário
+    if not user:
+        raise HTTPException(status_code=404, detail="E-mail não encontrado no sistema.")
+
+    # Proteção: Impede de trocar a senha de quem loga pelo Google
+    if user.password_hash == "google_sso":
+        raise HTTPException(status_code=400, detail="Usuários do Google devem entrar com o botão do Google.")
+
+    # Troca a senha direto e salva
+    user.password_hash = hash_password(payload.new_password)
+    db.add(user)
+    db.commit()
+    
+    return {"status": "ok", "message": "Senha alterada com sucesso!"}

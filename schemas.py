@@ -226,5 +226,5 @@ class ForgotPasswordRequest(BaseModel):
     email: str
 
 class ResetPasswordRequest(BaseModel):
-    token: str
+    email: str
     new_password: str

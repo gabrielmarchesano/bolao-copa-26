@@ -27,7 +27,7 @@ from services import (
     is_knockout,
     is_match_phase_locked,
     is_phase_guessable,
-    get_phase_key,
+    get_phase_key
 )
 
 router = APIRouter(prefix="/boloes/{bolao_id}/guesses", tags=["guesses"])
@@ -204,3 +204,4 @@ def guessable(
         "phases": phases, 
         "official_results": official_results
     }
+

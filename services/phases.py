@@ -127,13 +127,29 @@ def compute_phase_locks(now_brt: Optional[datetime] = None) -> Dict[str, dict]:
 
 def has_tournament_started() -> bool:
     """
-    Verifica se a competição já começou (qualquer fase foi travada).
-    
-    Usada no backend pra validar se um bolão pode ser deletado.
-    Retorna True se qualquer fase já passou do locktime (is_locked=True).
+    Verifica se a competição já começou.
+    A Copa é considerada "iniciada" no exato momento em que os palpites 
+    para o Jogo de Abertura (Jogo 1) são trancados.
     """
-    locks = compute_phase_locks()
-    return any(lock_info["is_locked"] for lock_info in locks.values())
+    matches = get_all_matches()
+    
+    # Prevenção de erro caso a API falhe e retorne vazio
+    if not matches:
+        return False
+        
+    # Como o matches.py já ordena cronologicamente, o matches[0] é sempre o Jogo de Abertura
+    jogo_abertura = matches[0]
+    dt_str = jogo_abertura.get("datetime_brt")
+    if not dt_str:
+        return False
+    # Retorna o status do cadeado do Jogo 1 (que já tem a regra de 1h embutida)
+    match_time = datetime.fromisoformat(dt_str)
+    
+    # Pega o relógio exato de agora, respeitando o mesmo fuso horário da partida
+    now = datetime.now(match_time.tzinfo)
+    
+    # Retorna True apenas se o relógio de agora já passou do apito inicial
+    return now >= match_time
 
 
 def is_phase_locked(phase_key: str, now_brt: Optional[datetime] = None) -> bool:

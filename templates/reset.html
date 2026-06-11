@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Redefinir Senha — Bolão da Copa 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Montserrat', sans-serif; background: #F2E9CE; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+  .card { background: #fff; padding: 40px; border-radius: 14px; box-shadow: 0 10px 30px rgba(14,44,110,.2); width: 100%; max-width: 400px; text-align: center; }
+  h2 { color: #0E2C6E; text-transform: uppercase; margin-top: 0; }
+  input { width: 100%; height: 48px; border: 1.5px solid #D9D9D9; border-radius: 10px; padding: 0 16px; margin-bottom: 16px; font-family: inherit; font-weight: 600; box-sizing: border-box;}
+  input:focus { outline: none; border-color: #0E2C6E; }
+  button { width: 100%; height: 50px; background: #0E2C6E; color: #fff; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; letter-spacing: 1px;}
+  button:hover { background: #081A46; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h2>Nova Senha</h2>
+  <form id="resetForm">
+    <input type="password" id="newPassword" placeholder="NOVA SENHA" required minlength="6" />
+    <input type="password" id="confirmPassword" placeholder="CONFIRMAR SENHA" required minlength="6" />
+    <button type="submit">SALVAR SENHA</button>
+  </form>
+</div>
+
+<script>
+  // Pega o token da URL (ex: ?token=eyJhbG...)
+  const urlParams = new URLSearchParams(window.location.search);
+  const token = urlParams.get('token');
+
+  if (!token) {
+      alert("Link inválido ou expirado.");
+      window.location.href = "/";
+  }
+
+  document.getElementById('resetForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const pw = document.getElementById('newPassword').value;
+      const confirm = document.getElementById('confirmPassword').value;
+
+      if (pw !== confirm) {
+          alert("As senhas não conferem!");
+          return;
+      }
+
+      try {
+          const r = await fetch('/auth/reset-password', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token: token, new_password: pw })
+          });
+
+          if (!r.ok) {
+              const err = await r.json();
+              throw new Error(err.detail || "Erro ao redefinir senha.");
+          }
+
+          alert("Senha redefinida com sucesso! Faça login com a nova senha.");
+          window.location.href = "/"; // Volta pro login
+      } catch (err) {
+          alert(err.message);
+      }
+  });
+</script>
+</body>
+</html>

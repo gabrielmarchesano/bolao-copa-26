@@ -362,9 +362,20 @@
             
             <div style="text-align: center; margin: 20px 0 10px; font-size: 13px; color: var(--muted); font-weight: 600;">Ou entre com</div>
 
-            <div class="links" style="margin-top: 24px;">
-              <a href="#forgot">Esqueceu a senha?</a>
+            <form class="panel" data-panel="forgot" id="forgotForm" autocomplete="off" novalidate>
+            <h2 class="panel-title"> Esqueceu a senha? </h2>
+            <p style="text-align: center; color: var(--muted); font-size: 13px; margin-bottom: 20px;">
+              Digite seu e-mail e enviaremos um link para você criar uma nova senha.
+            </p>
+            <div class="field">
+              <input type="email" name="email" placeholder="SEU EMAIL" required />
             </div>
+            
+            <button type="submit" class="btn-submit">ENVIAR LINK</button>
+            <div class="links">
+              <span>Lembrou a senha? <a href="#" data-switch="login"><b>Voltar</b></a></span>
+            </div>
+          </form>
           </form>
 
           <!-- CADASTRO -->
@@ -513,6 +524,34 @@
       alert(err.message);
     }
   });
+
+document.getElementById('forgotForm').addEventListener('submit', async function(e){
+    e.preventDefault();
+    const btn = this.querySelector('.btn-submit');
+    const originalText = btn.innerText;
+    btn.innerText = "ENVIANDO...";
+    btn.disabled = true;
+
+    try {
+      await fetch('/auth/forgot-password', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ email: this.email.value.trim() })
+      });
+      // Mostra mensagem de sucesso sempre
+      alert('Instruções enviadas! Olhe o terminal do seu backend Python para pegar o link de teste.');
+      
+      // Limpa e volta pro login
+      this.reset();
+      document.querySelector('.tab-btn[data-tab="login"]').click();
+    } catch(err) {
+      alert('Erro ao solicitar redefinição.');
+    } finally {
+      btn.innerText = originalText;
+      btn.disabled = false;
+    }
+  });
+
 </script>
 </body>
 </html>

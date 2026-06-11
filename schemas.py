@@ -220,3 +220,11 @@ class BolaoPreview(SQLModel):
     visibility: str
     members_count: int
     is_member: bool
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str

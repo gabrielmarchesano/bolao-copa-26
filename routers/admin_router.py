@@ -260,7 +260,7 @@ def sync_external_results(db: Session = Depends(get_db)):
 
     for match in all_matches:
         # Verifica se o jogo já tem placar na API externa
-        if match.get("score1") is not None and match.get("score2") is not None:
+        if match.get("real_s1") is not None and match.get("real_s2") is not None:
             match_id = match["id"]
             
             # Verifica se já temos esse resultado no banco local
@@ -271,18 +271,18 @@ def sync_external_results(db: Session = Depends(get_db)):
                 continue
 
             # Se é um resultado novo ou o placar mudou na API externa (ex: VAR anulou gol)
-            if not result or result.score1 != match["score1"] or result.score2 != match["score2"]:
+            if not result or result.score1 != match["real_s1"] or result.score2 != match["real_s2"]:
                 if not result:
                     result = MatchResult(
                         match_id=match_id, 
-                        score1=match["score1"], 
-                        score2=match["score2"],
+                        score1=match["real_s1"], 
+                        score2=match["real_s2"],
                         is_manual_override=False # Resultado automático
                     )
                     db.add(result)
                 else:
-                    result.score1 = match["score1"]
-                    result.score2 = match["score2"]
+                    result.score1 = match["real_s1"]
+                    result.score2 = match["real_s2"]
                     result.updated_at = datetime.utcnow()
 
                 # Recalcula os pontos de todo mundo para esse jogo
@@ -295,7 +295,7 @@ def sync_external_results(db: Session = Depends(get_db)):
                         real_s2=result.score2,
                         match_round=match.get("round"),
                         guess_pen_winner=g.pen_winner,
-                        real_pen_winner=0 # Assumindo que a API externa não manda penaltis fácil, vc preenche na mão se precisar
+                        real_pen_winner=match.get("real_pen_winner", 0 ) # Assumindo que a API externa não manda penaltis fácil, vc preenche na mão se precisar
                     )
                     g.locked = True
                 

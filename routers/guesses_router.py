@@ -68,7 +68,7 @@ def _validate_guess_payload(payload: GuessCreate, match: dict) -> None:
 
     dt_brt = datetime.fromisoformat(dt_str)
     now = datetime.now(dt_brt.tzinfo)
-    cutoff = dt_brt - timedelta(hours=1)
+    cutoff = dt_brt - timedelta(minutes=30)
     if now >= cutoff:
         raise HTTPException(
             status_code=400,

@@ -299,7 +299,7 @@ def _enrich_match(raw: dict, idx: int) -> dict:
     dt_brt = utc_dt.astimezone(BRT)
 
     now_brt = datetime.now(BRT)
-    cutoff_time = dt_brt - timedelta(hours=1)
+    cutoff_time = dt_brt - timedelta(minutes=30)
     is_locked = now_brt >= cutoff_time
     
     # 2. Extração dos times (Lida com TBD)
@@ -407,7 +407,7 @@ def get_all_matches() -> List[dict]:
     for m in _memory_cache:
         if m.get("datetime_brt"):
             dt_brt = datetime.fromisoformat(m["datetime_brt"])
-            cutoff_time = dt_brt - timedelta(hours=1)
+            cutoff_time = dt_brt - timedelta(minutes=30)
             # Sobrescreve o status antigo do cache com a realidade do segundo atual
             m["is_locked"] = now_brt >= cutoff_time
 

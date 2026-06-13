@@ -929,6 +929,29 @@
     0% { background-position: 200% 0; }
     100% { background-position: -200% 0; }
   }
+  /* Toggle de ordenação dos palpites */
+.order-toggle{
+  display:inline-flex; gap:2px; padding:3px;
+  background:var(--bg-soft); border:1px solid var(--divider);
+  border-radius:9px; margin-bottom:18px;
+}
+.order-toggle button{
+  border:none; background:transparent; cursor:pointer; font-family:inherit;
+  font-size:11px; font-weight:800; letter-spacing:.5px; text-transform:uppercase;
+  color:var(--navy-ink); padding:7px 14px; border-radius:6px; opacity:.65;
+  transition:background .15s ease, opacity .15s ease;
+}
+.order-toggle button.active{
+  background:#fff; color:var(--navy); opacity:1;
+  box-shadow:0 1px 3px rgba(14,44,110,.12);
+}
+/* Tag de grupo no card (modo cronológico) */
+.guess-card .guess-group-tag{
+  grid-column:1 / -1; justify-self:start; margin-bottom:4px;
+  font-size:10px; font-weight:800; letter-spacing:.6px; text-transform:uppercase;
+  color:var(--navy); background:var(--navy-soft);
+  padding:2px 9px; border-radius:6px;
+}
 </style>
 </head>
 <body>
@@ -1834,40 +1857,109 @@ function renderPhaseContent() {
   const phaseData = _guessState.data.phases[_guessState.activePhase];
   const myGuesses = _guessState.data.my_guesses;
 
-  // A aba só mostra "Em breve" se a fase inteira ainda estiver fechada (can_guess = false)
+  // Define a ordem padrão (cronológico) na 1ª vez, lembrando da sessão
+  if (_guessState.orderMode === undefined) {
+    _guessState.orderMode = sessionStorage.getItem('guessOrderMode') || 'chrono';
+  }
+
+  // A aba só mostra "Em breve" se a fase inteira ainda estiver fechada
   if (!phaseData || (!phaseData.can_guess && !phaseData.is_locked)) {
     container.innerHTML = `<div class="lock-banner" style="background:#E8F4FF; color:var(--navy);">⏰ Palpites abrem em breve.</div>`;
-    return; 
+    return;
   }
-  
+
+  // Ordena qualquer lista de jogos por data/hora (sem data vai pro fim)
+  const byKickoff = (a, b) => {
+    const ta = a.datetime_brt ? new Date(a.datetime_brt).getTime() : Infinity;
+    const tb = b.datetime_brt ? new Date(b.datetime_brt).getTime() : Infinity;
+    return ta - tb;
+  };
+
   let body = '';
-  
-  // MUDANÇA: Passamos "m.is_locked" que veio do Backend para cada card renderizado!
-  if (_guessState.activePhase === 'groups' && phaseData.groups){
-    body = Object.keys(phaseData.groups).sort().map(g => `
-      <div class="group-heading">${g}</div>
-      ${phaseData.groups[g].map(m => renderGuessCard(m, myGuesses[m.id], m.is_locked, _guessState.activePhase)).join('')}
-    `).join('');
-  } else if (phaseData.matches){
-    body = phaseData.matches.map(m => renderGuessCard(m, myGuesses[m.id], m.is_locked, _guessState.activePhase)).join('');
+
+  if (_guessState.activePhase === 'groups' && phaseData.groups) {
+    const mode = _guessState.orderMode; // 'chrono' | 'group'
+
+    const toggle = `
+      <div class="order-toggle" id="orderToggle">
+        <button data-order="chrono" class="${mode === 'chrono' ? 'active' : ''}">Cronológico</button>
+        <button data-order="group"  class="${mode === 'group'  ? 'active' : ''}">Por grupo</button>
+      </div>`;
+
+    if (mode === 'group') {
+      // --- ORDEM POR GRUPO (cabeçalho = grupo, sem tag no card) ---
+      const groupsBody = Object.keys(phaseData.groups).sort().map(grp => `
+        <div class="group-heading">${grp}</div>
+        ${phaseData.groups[grp].map(m =>
+          renderGuessCard(m, myGuesses[m.id], m.is_locked, _guessState.activePhase)
+        ).join('')}
+      `).join('');
+      body = toggle + groupsBody;
+
+    } else {
+      // --- ORDEM CRONOLÓGICA (cabeçalho = dia, tag de grupo no card) ---
+      const allMatches = [];
+      Object.keys(phaseData.groups).forEach(grp => {
+        phaseData.groups[grp].forEach(m => allMatches.push({ ...m, _group: grp }));
+      });
+      allMatches.sort(byKickoff);
+
+      const byDate = {};
+      allMatches.forEach(m => {
+        const dt = formatMatchDateTime(m.datetime_brt);
+        const key = dt.dateKey || 'zzz-sem-data';
+        if (!byDate[key]) byDate[key] = { label: dt.date, items: [] };
+        byDate[key].items.push(m);
+      });
+
+      const chronoBody = Object.keys(byDate).sort().map(k => `
+        <div class="group-heading">${byDate[k].label}</div>
+        ${byDate[k].items.map(m =>
+          renderGuessCard(m, myGuesses[m.id], m.is_locked, _guessState.activePhase, m._group)
+        ).join('')}
+      `).join('');
+      body = toggle + chronoBody;
+    }
+
+  } else if (phaseData.matches) {
+    // Mata-mata: sempre cronológico (não tem grupo)
+    body = [...phaseData.matches].sort(byKickoff)
+      .map(m => renderGuessCard(m, myGuesses[m.id], m.is_locked, _guessState.activePhase))
+      .join('');
   }
 
   container.innerHTML = body;
   bindGuessInputs();
+
+  // Liga o toggle (se estiver visível)
+  const tgl = document.getElementById('orderToggle');
+  if (tgl) {
+    tgl.querySelectorAll('button').forEach(b => {
+      b.onclick = () => {
+        _guessState.orderMode = b.dataset.order;
+        sessionStorage.setItem('guessOrderMode', b.dataset.order);
+        renderPhaseContent();
+      };
+    });
+  }
 }
 
 
-function renderGuessCard(match, myGuess, phaseLocked, phaseKey){
+// groupLabel (5º parâmetro) é opcional: quando enviado, mostra a tag do grupo no card.
+function renderGuessCard(match, myGuess, phaseLocked, phaseKey, groupLabel = ''){
   const g = myGuess || { score1: '', score2: '', pen_winner: 0, points: 0, locked: false };
   const isKnockout = KNOCKOUT_PHASES.has(phaseKey);
   const disabled = phaseLocked || g.locked;
   const hasGuess = myGuess && myGuess.score1 !== '' && myGuess.score1 !== null;
   const t1 = match.team1, t2 = match.team2;
   const flag = (t) => t.flag_url ? `<img src="${t.flag_url}" alt="${t.name_pt}" loading="lazy">` : '';
-  
+
+  // Tag do grupo (só aparece no modo cronológico, quando groupLabel é passado)
+  const groupTag = groupLabel ? `<div class="guess-group-tag">${groupLabel}</div>` : '';
+
   // Procura se o admin injetou resultado para este jogo
   const official = _guessState.data.official_results && _guessState.data.official_results[match.id];
-  
+
   // Decide qual placar usar: o do Admin (prioridade) ou o da API Externa
   const realScore1 = official ? official.score1 : match.real_s1;
   const realScore2 = official ? official.score2 : match.real_s2;
@@ -1882,16 +1974,15 @@ function renderGuessCard(match, myGuess, phaseLocked, phaseKey){
 
     return `
       <div class="guess-card locked" data-match-id="${match.id}">
+        ${groupTag}
         <div class="team-col">${flag(t1)}<span>${t1.name_pt}</span></div>
-        
 
-        
         <div class="score-input" style="gap: 12px; justify-content:center; border:none; background:transparent;">
           <span style="font-size: 22px; font-weight: 800; color: var(--navy);">${realScore1}</span>
           <span class="x">×</span>
           <span style="font-size: 22px; font-weight: 800; color: var(--navy);">${realScore2}</span>
         </div>
-        
+
         <div class="team-col right"><span>${t2.name_pt}</span>${flag(t2)}</div>
 
         <div class="meta-row" style="flex-direction:column; align-items:center; gap:6px; background:var(--bg-soft); padding:10px; border-radius:8px; margin-top:12px; border:none;">
@@ -1912,6 +2003,7 @@ function renderGuessCard(match, myGuess, phaseLocked, phaseKey){
 
   return `
     <div class="guess-card ${hasGuess?'has-guess':''} ${disabled?'locked':''}" data-match-id="${match.id}">
+      ${groupTag}
       <div class="team-col">${flag(t1)}<span>${t1.name_pt}</span></div>
       <div class="score-input">
         <input type="number" value="${g.score1??''}" data-score="1" data-match-id="${match.id}" ${disabled?'disabled':''}>

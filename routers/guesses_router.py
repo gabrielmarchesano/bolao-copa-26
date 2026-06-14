@@ -19,7 +19,7 @@ from sqlmodel import Session, select
 
 from auth import get_current_user, get_membership_or_403
 from database import get_db
-from models import Guess, User, MatchResult
+from models import Guess, User, MatchResult, Membership
 from schemas import GuessCreate, GuessRead
 from services import (
     get_all_matches,
@@ -44,6 +44,61 @@ def _find_match(match_id: int) -> dict:
         raise HTTPException(status_code=404, detail=f"Jogo {match_id} não encontrado.")
     return match
 
+# Quanto tempo antes do kickoff o palpite fecha.
+# (É AQUI que se muda para 5 minutos quando você for fazer aquele item pendente.)
+LOCK_OFFSET = timedelta(minutes=30)
+
+
+def _match_kickoff(match: dict):
+    """datetime (com tz) do início do jogo, ou None se não houver data."""
+    dt_str = match.get("datetime_brt")
+    if not dt_str:
+        return None
+    return datetime.fromisoformat(dt_str)
+
+
+def is_match_locked_for_editing(match: dict) -> bool:
+    """
+    True quando o palpite deste jogo NÃO pode mais ser alterado:
+    já passou de (kickoff - LOCK_OFFSET) — ou seja, o jogo está prestes a
+    começar, em andamento, ou já terminou.
+
+    É a MESMA regra usada para rejeitar um POST de palpite, por isso é segura
+    para liberar a exibição dos palpites alheios (itens 2 e 3).
+    """
+    kickoff = _match_kickoff(match)
+    if kickoff is None:
+        return False
+    now = datetime.now(kickoff.tzinfo)
+    return now >= (kickoff - LOCK_OFFSET)
+
+
+def _official_results_map(db: Session) -> dict:
+    """Resultado oficial por match_id (API externa + override manual do admin)."""
+    official = {}
+    for m in get_all_matches():
+        if m.get("real_s1") is not None and m.get("real_s2") is not None:
+            official[m["id"]] = {
+                "score1": m["real_s1"], "score2": m["real_s2"],
+                "pen_winner": m.get("real_pen_winner", 0),
+            }
+    for r in db.exec(select(MatchResult)).all():
+        official[r.match_id] = {
+            "score1": r.score1, "score2": r.score2, "pen_winner": r.pen_winner,
+        }
+    return official
+
+
+def _match_public(match: dict) -> dict:
+    """Campos do jogo que o front precisa pra renderizar um card."""
+    return {
+        "match_id": match["id"],
+        "team1": match.get("team1"),
+        "team2": match.get("team2"),
+        "datetime_brt": match.get("datetime_brt"),
+        "group": match.get("group"),
+        "round": match.get("round"),
+    }
 
 def _validate_guess_payload(payload: GuessCreate, match: dict) -> None:
     """Validações de regra de negócio. Raise HTTPException em caso de erro."""
@@ -59,21 +114,12 @@ def _validate_guess_payload(payload: GuessCreate, match: dict) -> None:
         if payload.pen_winner not in (1, 2):
             raise HTTPException(400, "pen_winner deve ser 0, 1 ou 2.")
 
-    # LOCK INDIVIDUAL: palpite fecha 1h antes do kickoff DESTE jogo.
-    # Usa o datetime_brt do próprio match (fonte: API). Recalculado a cada
-    # request com datetime.now, então o cache dinâmico não interfere.
-    dt_str = match.get("datetime_brt")
-    if not dt_str:
+    # LOCK: usa a regra centralizada (mesma da liberação de palpites)
+    if _match_kickoff(match) is None:
         raise HTTPException(400, "Jogo sem data definida — palpite indisponível.")
-
-    dt_brt = datetime.fromisoformat(dt_str)
-    now = datetime.now(dt_brt.tzinfo)
-    cutoff = dt_brt - timedelta(minutes=30)
-    if now >= cutoff:
-        raise HTTPException(
-            status_code=400,
-            detail="Palpites para este jogo estão encerrados (fecha 1h antes do início).",
-        )
+    if is_match_locked_for_editing(match):
+        raise HTTPException(400, "Palpites para este jogo estão encerrados.")
+      
 # ----------------------------------------------------------------------------
 # POST — criar ou atualizar palpite (upsert)
 # ----------------------------------------------------------------------------
@@ -216,3 +262,101 @@ def guessable(
         "official_results": official_results
     }
 
+# ----------------------------------------------------------------------------
+# GET — palpites de UM participante (só jogos travados) — clique no ranking
+# ----------------------------------------------------------------------------
+@router.get("/member/{membership_id}")
+def member_guesses(
+    bolao_id: int,
+    membership_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    # 1. Requester precisa ser membro do bolão
+    get_membership_or_403(bolao_id, current_user, db)
+
+    # 2. O alvo precisa pertencer a ESTE bolão (não vaza de outro bolão)
+    target = db.get(Membership, membership_id)
+    if not target or target.bolao_id != bolao_id:
+        raise HTTPException(404, "Participante não encontrado neste bolão.")
+
+    # 3. Conjunto de jogos travados (não editáveis)
+    matches_by_id = {m["id"]: m for m in get_all_matches()}
+    locked_ids = {mid for mid, m in matches_by_id.items() if is_match_locked_for_editing(m)}
+
+    # 4. Palpites do alvo SÓ dos jogos travados
+    guesses = {
+        g.match_id: g
+        for g in db.exec(select(Guess).where(Guess.membership_id == membership_id)).all()
+        if g.match_id in locked_ids
+    }
+
+    official = _official_results_map(db)
+
+    # 5. Lista cronológica de todos os jogos travados (marca quem não palpitou)
+    locked_matches = sorted(
+        (m for mid, m in matches_by_id.items() if mid in locked_ids),
+        key=lambda m: m.get("datetime_brt") or "",
+    )
+    items = []
+    for m in locked_matches:
+        g = guesses.get(m["id"])
+        item = _match_public(m)
+        item["guess"] = (
+            {"score1": g.score1, "score2": g.score2, "pen_winner": g.pen_winner, "points": g.points}
+            if g else None
+        )
+        item["official"] = official.get(m["id"])
+        items.append(item)
+
+    return {"membership_id": membership_id, "codinome": target.codinome, "items": items}
+
+
+# ----------------------------------------------------------------------------
+# GET — palpites de TODOS os participantes (só jogos travados)
+# ----------------------------------------------------------------------------
+@router.get("/all")
+def all_guesses(
+    bolao_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    get_membership_or_403(bolao_id, current_user, db)
+
+    # Membros do bolão (id → codinome)
+    members = db.exec(select(Membership).where(Membership.bolao_id == bolao_id)).all()
+    codinome_by_mid = {m.id: m.codinome for m in members}
+    member_ids = list(codinome_by_mid.keys())
+    if not member_ids:
+        return {"matches": []}
+
+    matches_by_id = {m["id"]: m for m in get_all_matches()}
+    locked_ids = {mid for mid, m in matches_by_id.items() if is_match_locked_for_editing(m)}
+
+    # Palpites de todo mundo, só dos jogos travados, agrupados por jogo
+    all_g = db.exec(select(Guess).where(Guess.membership_id.in_(member_ids))).all()
+    by_match = {}
+    for g in all_g:
+        if g.match_id not in locked_ids:
+            continue
+        by_match.setdefault(g.match_id, []).append({
+            "membership_id": g.membership_id,
+            "codinome": codinome_by_mid.get(g.membership_id, "—"),
+            "score1": g.score1, "score2": g.score2,
+            "pen_winner": g.pen_winner, "points": g.points,
+        })
+
+    official = _official_results_map(db)
+
+    locked_matches = sorted(
+        (matches_by_id[mid] for mid in by_match.keys()),
+        key=lambda m: m.get("datetime_brt") or "",
+    )
+    out = []
+    for m in locked_matches:
+        entry = _match_public(m)
+        entry["guesses"] = sorted(by_match[m["id"]], key=lambda x: -x["points"])
+        entry["official"] = official.get(m["id"])
+        out.append(entry)
+
+    return {"matches": out}

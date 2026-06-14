@@ -996,6 +996,15 @@
   .user-chip{ padding:4px; }
   .logout{ padding:6px 10px; font-size:11px; }
 } 
+  /* Corrige a barra inferior "vazando" pra fora da tela */
+html, body{ max-width:100%; overflow-x:hidden; }
+
+@media (max-width:900px){
+  .bottomnav-item{ min-width:0; }
+  .bottomnav-item span{
+    max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+}
 </style>
 </head>
 <body>

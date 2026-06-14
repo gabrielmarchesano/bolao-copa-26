@@ -1261,7 +1261,11 @@ html, body{ max-width:100%; overflow-x:hidden; }
   </div>
 
 
-
+        <div style="display:flex; justify-content:flex-end; margin-bottom:12px;">
+          <button class="btn-modal secondary" style="font-size:12px; padding:8px 14px; width:auto;" onclick="openAllGuesses()">
+            👁️ Ver palpites de todos
+          </button>
+        </div>
 
         <div class="auth-tabs" id="phaseTabs" style="margin-bottom: 20px; border-radius: 10px; overflow:hidden;"></div>
         
@@ -1445,6 +1449,17 @@ html, body{ max-width:100%; overflow-x:hidden; }
         <button type="submit" class="btn-modal primary">Salvar</button>
       </div>
     </form>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modalGuesses">
+  <div class="modal" style="max-width:520px;">
+    <h2 id="guessesTitle">Palpites</h2>
+    <p class="modal-sub" id="guessesSub">Apenas jogos já fechados (não editáveis).</p>
+    <div id="guessesBody" style="max-height:60vh; overflow-y:auto; margin-top:4px;"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn-modal secondary" data-close-modal>Fechar</button>
+    </div>
   </div>
 </div>
 
@@ -1838,7 +1853,7 @@ async function loadRanking(bolaoId, bolaoName) {
             }
 
             return `
-                <div class="bolao-row">
+               <div class="bolao-row" style="cursor:pointer" onclick="openMemberGuesses(${row.membership_id}, '${escapeHtml(row.codinome)}')">
                     <div>
                         <div class="title">${row.position}º · ${row.codinome} ${arrowHtml} ${realNameBadge}</div>
                         <div class="sub">${row.guesses_count} palpite(s) registrado(s)</div>
@@ -2713,6 +2728,88 @@ async function initApp() {
 
 // Inicia o app!
 initApp();
+
+/* ============================================================
+   Ver palpites (itens 2 e 3) — só jogos travados (filtrado no servidor)
+   ============================================================ */
+function _flagImg(t){
+  return t && t.flag_url
+    ? `<img src="${t.flag_url}" style="width:20px;height:14px;border-radius:2px;object-fit:cover;vertical-align:middle;">`
+    : '';
+}
+
+// Item 2 — palpites de um participante (clique no nome do ranking)
+async function openMemberGuesses(membershipId, codinome){
+  const id = window.currentBolaoId;
+  const modal = document.getElementById('modalGuesses');
+  document.getElementById('guessesTitle').textContent = `Palpites de ${codinome}`;
+  document.getElementById('guessesSub').textContent = 'Apenas jogos já fechados (não editáveis).';
+  const body = document.getElementById('guessesBody');
+  body.innerHTML = '<div class="calendar-empty">Carregando…</div>';
+  modal.classList.add('open');
+  try {
+    const r = await authFetch(`/boloes/${id}/guesses/member/${membershipId}`);
+    if (!r.ok) throw new Error('Erro ao carregar palpites.');
+    const data = await r.json();
+    if (!data.items.length){
+      body.innerHTML = '<div class="calendar-empty">Nenhum jogo fechado ainda.</div>';
+      return;
+    }
+    body.innerHTML = data.items.map(it => {
+      const off = it.official ? `${it.official.score1} x ${it.official.score2}` : '—';
+      const palpite = it.guess ? `${it.guess.score1} x ${it.guess.score2}` : 'não palpitou';
+      const pts = it.guess ? `${it.guess.points} pts` : '';
+      return `
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--divider);">
+          <div style="font-size:12px; color:var(--navy-ink); font-weight:700;">
+            ${_flagImg(it.team1)} ${escapeHtml(it.team1?.name_pt||'')} <span style="color:var(--muted)">×</span> ${escapeHtml(it.team2?.name_pt||'')} ${_flagImg(it.team2)}
+            <div style="font-size:10px; color:var(--muted); font-weight:600; margin-top:2px;">Oficial: ${off}</div>
+          </div>
+          <div style="text-align:right; white-space:nowrap;">
+            <div style="font-size:13px; font-weight:800; color:var(--navy);">${palpite}</div>
+            <div style="font-size:10px; font-weight:800; color:var(--gold-dark);">${pts}</div>
+          </div>
+        </div>`;
+    }).join('');
+  } catch(e){ body.innerHTML = `<div class="calendar-empty">${e.message}</div>`; }
+}
+
+// Item 3 — palpites de todos, por jogo
+async function openAllGuesses(){
+  const id = window.currentBolaoId;
+  const modal = document.getElementById('modalGuesses');
+  document.getElementById('guessesTitle').textContent = 'Palpites de todos';
+  document.getElementById('guessesSub').textContent = 'Apenas jogos já fechados (não editáveis).';
+  const body = document.getElementById('guessesBody');
+  body.innerHTML = '<div class="calendar-empty">Carregando…</div>';
+  modal.classList.add('open');
+  try {
+    const r = await authFetch(`/boloes/${id}/guesses/all`);
+    if (!r.ok) throw new Error('Erro ao carregar palpites.');
+    const data = await r.json();
+    if (!data.matches.length){
+      body.innerHTML = '<div class="calendar-empty">Nenhum jogo fechado ainda.</div>';
+      return;
+    }
+    body.innerHTML = data.matches.map(m => {
+      const off = m.official ? `${m.official.score1} x ${m.official.score2}` : '—';
+      const linhas = m.guesses.map(g => `
+        <div style="display:flex; justify-content:space-between; padding:4px 0; font-size:12px;">
+          <span style="color:var(--navy-ink); font-weight:600;">${escapeHtml(g.codinome)}</span>
+          <span style="font-weight:800; color:var(--navy);">${g.score1} x ${g.score2} ${g.points?`<span style="color:var(--gold-dark); font-size:10px;">(${g.points})</span>`:''}</span>
+        </div>`).join('');
+      return `
+        <div style="margin-bottom:16px;">
+          <div style="font-size:12px; font-weight:800; color:var(--navy); text-transform:uppercase; letter-spacing:.5px; border-bottom:2px solid var(--navy); padding-bottom:4px; margin-bottom:6px;">
+            ${escapeHtml(m.team1?.name_pt||'')} × ${escapeHtml(m.team2?.name_pt||'')}
+            <span style="color:var(--muted); font-weight:600;">· oficial ${off}</span>
+          </div>
+          ${linhas}
+        </div>`;
+    }).join('');
+  } catch(e){ body.innerHTML = `<div class="calendar-empty">${e.message}</div>`; }
+}
+
 </script>
 <script>
 (function(){

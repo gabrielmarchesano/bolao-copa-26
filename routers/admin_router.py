@@ -30,6 +30,7 @@ from services.phase_control import (
     get_phase_control_status,
 )
 from services.phases import PHASE_ORDER
+from services.ranking import snapshot_ranking_positions
 
 router = APIRouter(
     prefix="/admin",
@@ -39,13 +40,16 @@ router = APIRouter(
 
 @router.post("/championship-results")
 def set_championship_results(
-    payload: ExtraValidationPayload, 
-    db: Session = Depends(get_db), 
+  payload: ExtraValidationPayload, 
+  db: Session = Depends(get_db), 
 ):
     """
     Rota do Admin Geral da Plataforma. 
     Define o gabarito oficial da Copa e calcula os pontos bônus de TODOS os usuários do sistema.
     """
+    # Foto das posições antes de redistribuir os pontos bônus.
+    snapshot_ranking_positions(db)
+    
     # 1. Salva ou atualiza o gabarito único (ID 1) no banco de dados
     oficial = db.get(ChampionshipResult, 1)
     if not oficial:
@@ -82,6 +86,7 @@ def reset_championship_results(db: Session = Depends(get_db)):
     """
     Reseta o gabarito oficial e zera os pontos extras de todos os palpites de torneio.
     """
+    snapshot_ranking_positions(db)
     oficial = db.get(ChampionshipResult, 1)
     if not oficial:
         raise HTTPException(404, "Gabarito oficial não encontrado.")
@@ -128,7 +133,9 @@ def set_match_result(
         raise HTTPException(400, "Placares devem ser não-negativos.")
     if payload.pen_winner not in (0, 1, 2):
         raise HTTPException(400, "pen_winner deve ser 0, 1 ou 2.")
-
+     
+    # Foto das posições ANTES de aplicar este resultado, pra setinha refletir este jogo.
+    snapshot_ranking_positions(db)  
     match_round = match.get("round")
 
     # 1. Upsert do MatchResult
@@ -185,6 +192,8 @@ def reset_match_result(
     """
     Remove o resultado oficial e volta os palpites ao estado aberto (0 pontos).
     """
+    snapshot_ranking_positions(db)
+  
     # 1. Busca e remove o resultado oficial
     result = db.get(MatchResult, match_id)
     if not result:
@@ -257,6 +266,8 @@ def sync_external_results(db: Session = Depends(get_db)):
     """
     all_matches = get_all_matches() # Puxa da sua fonte externa
     updated_count = 0
+  # Foto das posições antes de processar os jogos finalizados deste ciclo.
+    snapshot_ranking_positions(db)
 
     for match in all_matches:
         # Verifica se o jogo já tem placar na API externa

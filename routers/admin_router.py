@@ -264,31 +264,34 @@ def sync_external_results(db: Session = Depends(get_db)):
     Robô que olha a API externa e processa os jogos finalizados.
     Pode ser chamado a cada 5 minutos por um Cron Job.
     """
-    all_matches = get_all_matches() # Puxa da sua fonte externa
+    all_matches = get_all_matches()
     updated_count = 0
-  # Foto das posições antes de processar os jogos finalizados deste ciclo.
-    snapshot_ranking_positions(db)
+    snapshotted = False  # tira a foto do ranking no máximo 1x por ciclo
 
     for match in all_matches:
-        # Verifica se o jogo já tem placar na API externa
         if match.get("real_s1") is not None and match.get("real_s2") is not None:
             match_id = match["id"]
-            
-            # Verifica se já temos esse resultado no banco local
             result = db.get(MatchResult, match_id)
 
-            # Se o admin (você) já alterou isso na mão, o robô PULA e não mexe!
+            # Se o admin alterou na mão, o robô pula
             if result and result.is_manual_override:
                 continue
 
-            # Se é um resultado novo ou o placar mudou na API externa (ex: VAR anulou gol)
+            # Resultado novo ou mudou (ex.: VAR)
             if not result or result.score1 != match["real_s1"] or result.score2 != match["real_s2"]:
+                # Há novidade neste ciclo → foto das posições ANTES de aplicar,
+                # só na primeira vez. Em ciclos sem novidade, não mexe na foto,
+                # então as setinhas permanecem até o próximo resultado de verdade.
+                if not snapshotted:
+                    snapshot_ranking_positions(db)
+                    snapshotted = True
+
                 if not result:
                     result = MatchResult(
-                        match_id=match_id, 
-                        score1=match["real_s1"], 
+                        match_id=match_id,
+                        score1=match["real_s1"],
                         score2=match["real_s2"],
-                        is_manual_override=False # Resultado automático
+                        is_manual_override=False,
                     )
                     db.add(result)
                 else:
@@ -296,7 +299,6 @@ def sync_external_results(db: Session = Depends(get_db)):
                     result.score2 = match["real_s2"]
                     result.updated_at = datetime.utcnow()
 
-                # Recalcula os pontos de todo mundo para esse jogo
                 guesses = db.exec(select(Guess).where(Guess.match_id == match_id)).all()
                 for g in guesses:
                     g.points = calculate_match_points(
@@ -306,10 +308,10 @@ def sync_external_results(db: Session = Depends(get_db)):
                         real_s2=result.score2,
                         match_round=match.get("round"),
                         guess_pen_winner=g.pen_winner,
-                        real_pen_winner=match.get("real_pen_winner", 0 ) # Assumindo que a API externa não manda penaltis fácil, vc preenche na mão se precisar
+                        real_pen_winner=match.get("real_pen_winner", 0),
                     )
                     g.locked = True
-                
+
                 updated_count += 1
 
     db.commit()

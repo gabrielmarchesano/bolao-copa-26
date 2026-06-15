@@ -1925,6 +1925,7 @@ async function loadBolaoGuesses(bolaoId){
     }
     _guessState.activePhase = activePhase;
 
+    _guessState.scrollToToday = true;  // posiciona nos jogos de hoje na abertura
     renderPhaseTabs();
     renderPhaseContent();
     startTimerUpdate();
@@ -2016,7 +2017,7 @@ function renderPhaseContent() {
       });
 
       const chronoBody = Object.keys(byDate).sort().map(k => `
-        <div class="group-heading">${byDate[k].label}</div>
+        <div class="group-heading" data-date-key="${k}">${byDate[k].label}</div>
         ${byDate[k].items.map(m =>
           renderGuessCard(m, myGuesses[m.id], m.is_locked, _guessState.activePhase, m._group)
         ).join('')}
@@ -2045,8 +2046,32 @@ function renderPhaseContent() {
       };
     });
   }
+// Na 1ª abertura do bolão, posiciona a rolagem nos jogos de hoje
+  if (_guessState.scrollToToday) {
+    _guessState.scrollToToday = false;
+    requestAnimationFrame(scrollToTodaySection);
+  }
 }
 
+function scrollToTodaySection(){
+  const headings = Array.from(document.querySelectorAll('#phaseContent [data-date-key]'))
+    .filter(h => /^\d{4}-\d{2}-\d{2}$/.test(h.dataset.dateKey));
+  if (!headings.length) return;
+
+  const now = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  const todayKey = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+
+  // Hoje → senão o próximo dia com jogos → senão o último (tudo no passado)
+  const target = headings.find(h => h.dataset.dateKey === todayKey)
+              || headings.find(h => h.dataset.dateKey >= todayKey)
+              || headings[headings.length - 1];
+  if (!target) return;
+
+  const OFFSET = 80; // compensa a topbar fixa + um respiro
+  const top = target.getBoundingClientRect().top + window.scrollY - OFFSET;
+  window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+}
 
 // groupLabel (5º parâmetro) é opcional: quando enviado, mostra a tag do grupo no card.
 function renderGuessCard(match, myGuess, phaseLocked, phaseKey, groupLabel = ''){

@@ -891,10 +891,58 @@
     .main{ padding-left: 24px; padding-right: 24px; }
     .matches-grid{ grid-template-columns: 1fr; }
     .cta-grid{ grid-template-columns: 1fr; }
-    .calendar-row{
-      grid-template-columns: 80px 1fr 1fr 1fr;
+    .calendar-row {
+      display: flex;
+      flex-direction: column; 
+      align-items: center;
+      gap: 10px;
+      padding: 16px;
+      position: relative;
     }
-    .calendar-row .cal-venue, .calendar-row .group{ display: none; }
+
+    .calendar-row .time {
+      font-size: 13px;
+      opacity: 0.8;
+    }
+    
+    .calendar-row .group {
+      display: inline-block; 
+      font-size: 10px;
+      padding: 2px 6px;
+    }
+
+    .calendar-row .cal-team {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      justify-content: center;
+      text-align: center;
+      width: 100%;
+    }
+    
+    .calendar-row .cal-team.right {
+      flex-direction: row-reverse; 
+    }
+    
+    .calendar-row .cal-team img {
+      width: 28px;
+      height: 19px;
+    }
+
+    .calendar-row .cal-vs {
+      font-size: 16px;
+      background: var(--bg-soft);
+      padding: 4px 16px;
+      border-radius: 20px;
+      margin: 4px 0;
+      min-width: 80px;
+      text-align: center;
+    }
+
+    .calendar-row .cal-venue {
+      display: none;
+    }
     
     /* Botão do Menu */
     .mobile-menu-btn { display: flex; align-items: center; justify-content: center; }

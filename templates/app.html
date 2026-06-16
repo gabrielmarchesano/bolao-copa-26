@@ -1811,7 +1811,6 @@ function openBolaoDetail(id, name, inviteCode, description, isRestoring = false)
               }
               showToast('Codinome atualizado com sucesso!');
               loadRanking(id, name);
-              loadStats(id);
           } catch(e) { alert(e.message); }
       };
   }
@@ -1823,7 +1822,7 @@ function openBolaoDetail(id, name, inviteCode, description, isRestoring = false)
   loadBolaoGuesses(id);
   if (typeof loadExtraGuesses === 'function') loadExtraGuesses(id);
   loadRanking(id, name);
-  
+  loadStats(id);
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 

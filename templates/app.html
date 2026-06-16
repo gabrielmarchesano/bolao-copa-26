@@ -1224,6 +1224,7 @@ html, body{ max-width:100%; overflow-x:hidden; }
       <div class="sub-tabs" style="margin-bottom: 24px;">
         <button class="sub-tab active" data-bolao-tab="palpites">Meus Palpites</button>
         <button class="sub-tab" data-bolao-tab="ranking">Ranking</button>
+        <button class="sub-tab" data-bolao-tab="stats">Estatísticas</button>
       </div>
 
       <div data-bolao-panel="palpites">
@@ -1282,6 +1283,13 @@ html, body{ max-width:100%; overflow-x:hidden; }
             </button>
         </div>
         <div id="rankingContainer"></div>
+      </div>
+      <div data-bolao-panel="stats" hidden>
+        <h3 style="margin:0 0 4px; color:var(--navy);">Estatísticas</h3>
+        <p class="page-subtitle" style="margin-bottom:16px;">
+          Cravadas (placar exato) e zeros — considerando só jogos já decididos.
+        </p>
+        <div id="statsContainer"></div>
       </div>
     </div>
   </section>
@@ -1755,6 +1763,7 @@ function openBolaoDetail(id, name, inviteCode, description, isRestoring = false)
               }
               showToast('Codinome atualizado com sucesso!');
               loadRanking(id, name);
+              loadStats(id);
           } catch(e) { alert(e.message); }
       };
   }
@@ -1875,6 +1884,43 @@ async function loadRanking(bolaoId, bolaoName) {
         container.innerHTML = `<div class="calendar-empty">Erro: ${err.message}</div>`; 
     }
 }
+
+async function loadStats(bolaoId){
+  const c = document.getElementById('statsContainer');
+  if (!c) return;
+  c.innerHTML = `<div class="calendar-empty">Carregando estatísticas…</div>`;
+  try {
+    const r = await authFetch(`/boloes/${bolaoId}/stats`);
+    if (!r.ok) throw new Error('Erro ao carregar estatísticas.');
+    const rows = await r.json();
+    if (!rows.length){
+      c.innerHTML = `<div class="calendar-empty">Sem dados ainda.</div>`;
+      return;
+    }
+    c.innerHTML = `
+      <div class="bolao-list">
+        ${rows.map((row, i) => `
+          <div class="bolao-row">
+            <div>
+              <div class="title">${i+1}. ${escapeHtml(row.codinome)}</div>
+              <div class="sub">${row.decididos} jogo(s) decidido(s)</div>
+            </div>
+            <div style="display:flex; gap:18px; align-items:center;">
+              <div style="text-align:center;">
+                <div style="font-size:17px; font-weight:800; color:var(--success);">${row.cravadas}</div>
+                <div style="font-size:9px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.5px;">cravadas</div>
+              </div>
+              <div style="text-align:center;">
+                <div style="font-size:17px; font-weight:800; color:var(--danger);">${row.zeros}</div>
+                <div style="font-size:9px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.5px;">zeros</div>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>`;
+  } catch(e){ c.innerHTML = `<div class="calendar-empty">${e.message}</div>`; }
+}
+  
 function gerarTabelaWhatsApp(bolaoName) {
     const ranking = window.currentRankingData || [];
     let text = `🏆 *RANKING: ${bolaoName}* 🏆\n\n`;

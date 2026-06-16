@@ -1512,6 +1512,10 @@ html, body{ max-width:100%; overflow-x:hidden; }
   <div class="modal" style="max-width:520px;">
     <h2 id="guessesTitle">Palpites</h2>
     <p class="modal-sub" id="guessesSub">Apenas jogos já fechados (não editáveis).</p>
+    <input type="text" id="guessesSearch" placeholder="Buscar…"
+           style="width:100%; height:40px; padding:0 14px; margin:8px 0 4px;
+                  border:1.5px solid var(--border); border-radius:8px;
+                  font-family:inherit; font-size:13px; font-weight:600; color:var(--navy-ink);">
     <div id="guessesBody" style="max-height:60vh; overflow-y:auto; margin-top:4px;"></div>
     <div class="modal-actions">
       <button type="button" class="btn-modal secondary" data-close-modal>Fechar</button>
@@ -2878,7 +2882,8 @@ async function initApp() {
 initApp();
 
 /* ============================================================
-   Ver palpites (itens 2 e 3) — só jogos travados (filtrado no servidor)
+   Ver palpites (itens 2 e 3) — só jogos travados
+   Ordem decrescente + busca por seleção e por codinome
    ============================================================ */
 function _flagImg(t){
   return t && t.flag_url
@@ -2886,78 +2891,127 @@ function _flagImg(t){
     : '';
 }
 
+// Estado da modal (permite buscar/ordenar sem refazer o request)
+let _guessesView = { entries: [], renderEntry: null, filterEntry: null };
+
+function _matchTeam(e, q){
+  return (e.team1?.name_pt || '').toLowerCase().includes(q) ||
+         (e.team2?.name_pt || '').toLowerCase().includes(q);
+}
+
+// Item 2 (um participante): filtra só por seleção
+function _filterMemberItem(it, q){
+  return _matchTeam(it, q) ? it : null;
+}
+
+// Item 3 (todos): por seleção OU codinome.
+// Se casar só por codinome, mostra apenas os palpites daquele(s) codinome(s).
+function _filterAllMatch(m, q){
+  if (_matchTeam(m, q)) return m;  // seleção casou → mostra todos os palpites
+  const hits = (m.guesses || []).filter(g => (g.codinome || '').toLowerCase().includes(q));
+  return hits.length ? { ...m, guesses: hits } : null;
+}
+
+function _renderGuessesView(term){
+  const body = document.getElementById('guessesBody');
+  const q = (term || '').trim().toLowerCase();
+
+  // Ordem cronológica DECRESCENTE (mais recentes primeiro; sem data vai pro fim)
+  let list = [..._guessesView.entries].sort((a, b) => {
+    const ta = a.datetime_brt ? new Date(a.datetime_brt).getTime() : -Infinity;
+    const tb = b.datetime_brt ? new Date(b.datetime_brt).getTime() : -Infinity;
+    return tb - ta;
+  });
+
+  // Filtro (por seleção e/ou codinome, conforme a modal)
+  if (q && _guessesView.filterEntry){
+    list = list.map(e => _guessesView.filterEntry(e, q)).filter(Boolean);
+  }
+
+  if (!list.length){
+    body.innerHTML = `<div class="calendar-empty">${q ? 'Nenhum resultado.' : 'Nenhum jogo fechado ainda.'}</div>`;
+    return;
+  }
+  body.innerHTML = list.map(_guessesView.renderEntry).join('');
+}
+
+// Render de cada entrada — item 2 (um participante)
+function _renderMemberItem(it){
+  const off = it.official ? `${it.official.score1} x ${it.official.score2}` : '—';
+  const palpite = it.guess ? `${it.guess.score1} x ${it.guess.score2}` : 'não palpitou';
+  const pts = it.guess ? `${it.guess.points} pts` : '';
+  return `
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--divider);">
+      <div style="font-size:12px; color:var(--navy-ink); font-weight:700;">
+        ${_flagImg(it.team1)} ${escapeHtml(it.team1?.name_pt||'')} <span style="color:var(--muted)">×</span> ${escapeHtml(it.team2?.name_pt||'')} ${_flagImg(it.team2)}
+        <div style="font-size:10px; color:var(--muted); font-weight:600; margin-top:2px;">Oficial: ${off}</div>
+      </div>
+      <div style="text-align:right; white-space:nowrap;">
+        <div style="font-size:13px; font-weight:800; color:var(--navy);">${palpite}</div>
+        <div style="font-size:10px; font-weight:800; color:var(--gold-dark);">${pts}</div>
+      </div>
+    </div>`;
+}
+
+// Render de cada entrada — item 3 (todos por jogo)
+function _renderAllMatch(m){
+  const off = m.official ? `${m.official.score1} x ${m.official.score2}` : '—';
+  const linhas = m.guesses.map(g => `
+    <div style="display:flex; justify-content:space-between; padding:4px 0; font-size:12px;">
+      <span style="color:var(--navy-ink); font-weight:600;">${escapeHtml(g.codinome)}</span>
+      <span style="font-weight:800; color:var(--navy);">${g.score1} x ${g.score2} ${g.points?`<span style="color:var(--gold-dark); font-size:10px;">(${g.points})</span>`:''}</span>
+    </div>`).join('');
+  return `
+    <div style="margin-bottom:16px;">
+      <div style="font-size:12px; font-weight:800; color:var(--navy); text-transform:uppercase; letter-spacing:.5px; border-bottom:2px solid var(--navy); padding-bottom:4px; margin-bottom:6px;">
+        ${escapeHtml(m.team1?.name_pt||'')} × ${escapeHtml(m.team2?.name_pt||'')}
+        <span style="color:var(--muted); font-weight:600;">· oficial ${off}</span>
+      </div>
+      ${linhas}
+    </div>`;
+}
+
+function _openGuessesModal(title, placeholder){
+  document.getElementById('guessesTitle').textContent = title;
+  document.getElementById('guessesSub').textContent = 'Apenas jogos já fechados (não editáveis).';
+  const search = document.getElementById('guessesSearch');
+  if (search){ search.value = ''; search.placeholder = placeholder || 'Buscar…'; }
+  document.getElementById('guessesBody').innerHTML = '<div class="calendar-empty">Carregando…</div>';
+  document.getElementById('modalGuesses').classList.add('open');
+}
+
 // Item 2 — palpites de um participante (clique no nome do ranking)
 async function openMemberGuesses(membershipId, codinome){
   const id = window.currentBolaoId;
-  const modal = document.getElementById('modalGuesses');
-  document.getElementById('guessesTitle').textContent = `Palpites de ${codinome}`;
-  document.getElementById('guessesSub').textContent = 'Apenas jogos já fechados (não editáveis).';
-  const body = document.getElementById('guessesBody');
-  body.innerHTML = '<div class="calendar-empty">Carregando…</div>';
-  modal.classList.add('open');
+  _openGuessesModal(`Palpites de ${codinome}`, 'Buscar por seleção…');
   try {
     const r = await authFetch(`/boloes/${id}/guesses/member/${membershipId}`);
     if (!r.ok) throw new Error('Erro ao carregar palpites.');
     const data = await r.json();
-    if (!data.items.length){
-      body.innerHTML = '<div class="calendar-empty">Nenhum jogo fechado ainda.</div>';
-      return;
-    }
-    body.innerHTML = data.items.map(it => {
-      const off = it.official ? `${it.official.score1} x ${it.official.score2}` : '—';
-      const palpite = it.guess ? `${it.guess.score1} x ${it.guess.score2}` : 'não palpitou';
-      const pts = it.guess ? `${it.guess.points} pts` : '';
-      return `
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--divider);">
-          <div style="font-size:12px; color:var(--navy-ink); font-weight:700;">
-            ${_flagImg(it.team1)} ${escapeHtml(it.team1?.name_pt||'')} <span style="color:var(--muted)">×</span> ${escapeHtml(it.team2?.name_pt||'')} ${_flagImg(it.team2)}
-            <div style="font-size:10px; color:var(--muted); font-weight:600; margin-top:2px;">Oficial: ${off}</div>
-          </div>
-          <div style="text-align:right; white-space:nowrap;">
-            <div style="font-size:13px; font-weight:800; color:var(--navy);">${palpite}</div>
-            <div style="font-size:10px; font-weight:800; color:var(--gold-dark);">${pts}</div>
-          </div>
-        </div>`;
-    }).join('');
-  } catch(e){ body.innerHTML = `<div class="calendar-empty">${e.message}</div>`; }
+    _guessesView = { entries: data.items, renderEntry: _renderMemberItem, filterEntry: _filterMemberItem };
+    _renderGuessesView('');
+  } catch(e){ document.getElementById('guessesBody').innerHTML = `<div class="calendar-empty">${e.message}</div>`; }
 }
 
 // Item 3 — palpites de todos, por jogo
 async function openAllGuesses(){
   const id = window.currentBolaoId;
-  const modal = document.getElementById('modalGuesses');
-  document.getElementById('guessesTitle').textContent = 'Palpites de todos';
-  document.getElementById('guessesSub').textContent = 'Apenas jogos já fechados (não editáveis).';
-  const body = document.getElementById('guessesBody');
-  body.innerHTML = '<div class="calendar-empty">Carregando…</div>';
-  modal.classList.add('open');
+  _openGuessesModal('Palpites de todos', 'Buscar por seleção ou participante…');
   try {
     const r = await authFetch(`/boloes/${id}/guesses/all`);
     if (!r.ok) throw new Error('Erro ao carregar palpites.');
     const data = await r.json();
-    if (!data.matches.length){
-      body.innerHTML = '<div class="calendar-empty">Nenhum jogo fechado ainda.</div>';
-      return;
-    }
-    body.innerHTML = data.matches.map(m => {
-      const off = m.official ? `${m.official.score1} x ${m.official.score2}` : '—';
-      const linhas = m.guesses.map(g => `
-        <div style="display:flex; justify-content:space-between; padding:4px 0; font-size:12px;">
-          <span style="color:var(--navy-ink); font-weight:600;">${escapeHtml(g.codinome)}</span>
-          <span style="font-weight:800; color:var(--navy);">${g.score1} x ${g.score2} ${g.points?`<span style="color:var(--gold-dark); font-size:10px;">(${g.points})</span>`:''}</span>
-        </div>`).join('');
-      return `
-        <div style="margin-bottom:16px;">
-          <div style="font-size:12px; font-weight:800; color:var(--navy); text-transform:uppercase; letter-spacing:.5px; border-bottom:2px solid var(--navy); padding-bottom:4px; margin-bottom:6px;">
-            ${escapeHtml(m.team1?.name_pt||'')} × ${escapeHtml(m.team2?.name_pt||'')}
-            <span style="color:var(--muted); font-weight:600;">· oficial ${off}</span>
-          </div>
-          ${linhas}
-        </div>`;
-    }).join('');
-  } catch(e){ body.innerHTML = `<div class="calendar-empty">${e.message}</div>`; }
+    _guessesView = { entries: data.matches, renderEntry: _renderAllMatch, filterEntry: _filterAllMatch };
+    _renderGuessesView('');
+  } catch(e){ document.getElementById('guessesBody').innerHTML = `<div class="calendar-empty">${e.message}</div>`; }
 }
 
+// Liga a busca da modal (re-filtra a lista já carregada, sem novo request)
+(function(){
+  const s = document.getElementById('guessesSearch');
+  if (s) s.addEventListener('input', () => _renderGuessesView(s.value));
+})();
+  
 </script>
 <script>
 (function(){

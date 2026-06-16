@@ -2161,11 +2161,10 @@ function scrollToTodaySection(){
               || headings[headings.length - 1];
   if (!target) return;
 
-  const OFFSET = 80; // compensa a topbar fixa + um respiro
-  const top = target.getBoundingClientRect().top + window.scrollY - OFFSET;
-  window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+  target.style.scrollMarginTop = '80px';            // compensa a topbar fixa
+  target.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
-
+  
 // groupLabel (5º parâmetro) é opcional: quando enviado, mostra a tag do grupo no card.
 function renderGuessCard(match, myGuess, phaseLocked, phaseKey, groupLabel = ''){
   const g = myGuess || { score1: '', score2: '', pen_winner: 0, points: 0, locked: false };

@@ -23,7 +23,7 @@ from sqlmodel import Session, func, select
 
 from auth import get_current_user, get_membership_or_403
 from database import get_db
-from models import Bolao, Guess, Membership, User, ExtraGuess, ChampionshipResult 
+from models import Bolao, Guess, Membership, User, ExtraGuess, ChampionshipResult, MatchResult 
 from schemas import BolaoCreate, BolaoJoin, BolaoPreview, BolaoRead, RankingRow, ExtraGuessPayload
 from models import JoinRequest, Notification
 from schemas import BolaoSearchResult, JoinRequestCreate, JoinRequestRead, JoinRequestRespond, CodinomeUpdate, BolaoUpdate
@@ -518,6 +518,67 @@ def ranking(
     # GET é só-leitura: o baseline (last_position) é gravado no admin, ANTES de
     # cada resultado ser aplicado (ver services/ranking.py).
     return ranking_list
+
+# ----------------------------------------------------------------------------
+# GET /boloes/{id}/stats — estatísticas (cravadas e zeros)
+# ----------------------------------------------------------------------------
+@router.get("/{bolao_id}/stats")
+def bolao_stats(
+    bolao_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Cravadas (placar exato) e zeros por participante, considerando só jogos
+    já decididos (Guess.locked = True). Cravada = palpite igual ao MatchResult.
+    """
+    get_membership_or_403(bolao_id, current_user, db)
+
+    members = db.exec(
+        select(Membership).where(Membership.bolao_id == bolao_id)
+    ).all()
+    if not members:
+        return []
+
+    stats = {
+        m.id: {
+            "membership_id": m.id,
+            "codinome": m.codinome,
+            "decididos": 0,
+            "cravadas": 0,
+            "zeros": 0,
+        }
+        for m in members
+    }
+    member_ids = list(stats.keys())
+
+    # Placar oficial por match_id (todo jogo decidido tem um MatchResult)
+    results = {r.match_id: r for r in db.exec(select(MatchResult)).all()}
+
+    # Palpites decididos dos membros deste bolão
+    guesses = db.exec(
+        select(Guess).where(
+            Guess.membership_id.in_(member_ids),
+            Guess.locked == True,  # noqa: E712
+        )
+    ).all()
+
+    for g in guesses:
+        s = stats.get(g.membership_id)
+        if not s:
+            continue
+        s["decididos"] += 1
+        if g.points == 0:
+            s["zeros"] += 1
+        r = results.get(g.match_id)
+        if r and g.score1 == r.score1 and g.score2 == r.score2:
+            s["cravadas"] += 1
+
+    # Ordena: mais cravadas → menos zeros → codinome
+    return sorted(
+        stats.values(),
+        key=lambda x: (-x["cravadas"], x["zeros"], x["codinome"].lower()),
+    )
 # ============================================================================
 # POST /boloes/{id}/join-requests — solicitar entrada
 # ============================================================================

@@ -2357,34 +2357,65 @@ async function loadCalendar(){
   } catch(e){ c.innerHTML = 'Erro ao carregar'; }
 }
 
-function renderCalendar(){
+function renderCalendar() {
   const c = document.getElementById('calendarContent');
   const g = document.getElementById('filterGroup').value;
   const t = document.getElementById('filterTeam').value.toLowerCase();
-  const filtered = calendarData.filter(m => (!g || m.group===g) && (!t || m.team1.name_pt.toLowerCase().includes(t) || m.team2.name_pt.toLowerCase().includes(t)));
-  
+
+  const filtered = calendarData.filter(m =>
+    (!g || m.group === g) &&
+    (!t || m.team1.name_pt.toLowerCase().includes(t) || m.team2.name_pt.toLowerCase().includes(t))
+  );
+
   const byDate = {};
   filtered.forEach(m => {
     const dt = formatMatchDateTime(m.datetime_brt);
-    if(!byDate[dt.dateKey]) byDate[dt.dateKey] = { label: dt.date, items: [] };
-    byDate[dt.dateKey].items.push({m, dt});
+    if (!byDate[dt.dateKey]) byDate[dt.dateKey] = { label: dt.date, items: [] };
+    byDate[dt.dateKey].items.push({ m, dt });
   });
 
-  c.innerHTML = Object.keys(byDate).sort().map(k => `
-    <div class="date-section">
-      <div class="date-heading">${byDate[k].label}</div>
-      ${byDate[k].items.map(i => `
+  c.innerHTML = Object.keys(byDate).sort().map(dateKey => {
+    const { label, items } = byDate[dateKey];
+
+    const rows = items.map(({ m, dt }) => {
+      const temPlacar = m.real_s1 !== null && m.real_s1 !== undefined;
+
+      const placarHtml = temPlacar
+        ? `<span class="score">${m.real_s1}<span class="score-sep">x</span>${m.real_s2}</span>`
+        : `<span class="vs-label">VS</span>`;
+
+      const flag1 = m.team1.flag_url ? `<img src="${m.team1.flag_url}" alt="${m.team1.name_pt}">` : '';
+      const flag2 = m.team2.flag_url ? `<img src="${m.team2.flag_url}" alt="${m.team2.name_pt}">` : '';
+
+      return `
         <div class="calendar-row">
-          <div class="time">${i.dt.time}</div>
-          <div class="group">${i.m.group||'—'}</div>
-          <div class="cal-team">${i.m.team1.flag_url?`<img src="${i.m.team1.flag_url}">`:''}<span>${i.m.team1.name_pt}</span></div>
-          <div class="cal-vs">VS</div>
-          <div class="cal-team right"><span>${i.m.team2.name_pt}</span>${i.m.team2.flag_url?`<img src="${i.m.team2.flag_url}">`:''}</div>
-          <div class="cal-venue">${i.m.ground}</div>
+          <div class="cal-time">${dt.time}</div>
+          <div class="cal-group">${m.group || '—'}</div>
+
+          <div class="cal-team cal-team--home">
+            ${flag1}
+            <span>${m.team1.name_pt}</span>
+          </div>
+
+          <div class="cal-vs">${placarHtml}</div>
+
+          <div class="cal-team cal-team--away">
+            <span>${m.team2.name_pt}</span>
+            ${flag2}
+          </div>
+
+          <div class="cal-venue">${m.ground}</div>
         </div>
-      `).join('')}
-    </div>
-  `).join('');
+      `;
+    }).join('');
+
+    return `
+      <div class="date-section">
+        <div class="date-heading">${label}</div>
+        ${rows}
+      </div>
+    `;
+  }).join('');
 }
 
 document.getElementById('filterGroup').onchange = renderCalendar;

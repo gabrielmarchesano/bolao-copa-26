@@ -1,49 +1,4 @@
-"""
-scoring.py — regras de pontuação do bolão.
 
-CONCEITO: funções puras (sem side effects, sem I/O, sem banco).
-Fácil de testar, fácil de trocar a regra sem quebrar nada.
-
-═══════════════════════════════════════════════════════════════
-REGRA BASE (fase de grupos, peso 1)
-═══════════════════════════════════════════════════════════════
-- Placar exato                     → 3 pts
-- Só vencedor/empate (placar ≠)    → 1 pt
-- Errou tudo                       → 0 pts
-
-═══════════════════════════════════════════════════════════════
-PESOS POR FASE (multiplicadores)
-═══════════════════════════════════════════════════════════════
-- Fase de grupos (Matchday N)      → peso 1
-- Oitavas de 32 (Round of 32)      → peso 2
-- Oitavas de 16 (Round of 16)      → peso 2
-- Quartas (Quarter-finals)         → peso 3
-- Semi (Semi-finals)               → peso 4
-- 3º lugar (Play-off 3rd place)    → peso 2
-- Final                            → peso 5
-
-═══════════════════════════════════════════════════════════════
-REGRA DE PÊNALTIS (mata-mata que termina empatado e vai pra pênaltis)
-═══════════════════════════════════════════════════════════════
-Só aplica quando:
-  (a) o jogo teve decisão por pênaltis (real_pen_winner != 0)
-  (b) o palpite foi um empate exato (guess_s1 == guess_s2 e bateu com
-      o placar real do tempo normal/prorrogação)
-  (c) o palpite também inclui um chute de quem vence nos pênaltis
-
-Cenários:
-  - Acertou placar exato + acertou pen_winner  → 3 × peso (pontuação cheia)
-  - Acertou placar exato + errou pen_winner    → floor(2/3 × 3 × peso)
-  - Acertou só vencedor/empate                 → 1 × peso (regra normal, pen ignorado)
-
-═══════════════════════════════════════════════════════════════
-REGRA DE TORNEIO (outrights, palpites pré-Copa)
-═══════════════════════════════════════════════════════════════
-- Campeão exato          → 50 pts
-- Artilheiro exato       → 30 pts
-- Melhor jogador exato   → 30 pts
-(valores FIXOS — não multiplicam por peso)
-"""
 from math import floor
 from typing import Optional
 import unicodedata
@@ -131,9 +86,9 @@ def calculate_match_points(
         # pontos cheios — decisão de produto para não punir user desavisado.
         if real_pen_winner != 0 and guess_pen_winner != 0:
             if guess_pen_winner == real_pen_winner:
-                return base_points * weight  # Acertou placar exato + acertou pen_winner → pontuação cheia
+                return (base_points * weight) + weight  # Acertou placar exato + acertou pen_winner → pontuação cheia
             
-            return max (1, (weight - 1))* base_points  # Acertou placar exato + errou pen_winner → penaliza peso (mínimo 1×)
+            return (max(1,weight)* base_points) - weight  # Acertou placar exato + errou pen_winner → penaliza peso (mínimo 1×)
         
         return base_points * weight
 
@@ -144,8 +99,8 @@ def calculate_match_points(
         base_points = 3
         if real_pen_winner != 0 and guess_pen_winner != 0:
             if guess_pen_winner == real_pen_winner:
-                return base_points * weight  # Errou empate + acertou pen_winner 
-            return base_points* max(1, weight - 1)  # Errou empate  e errou pen_winner 
+                return (base_points * weight) + weight  # Errou placar exato do empate + acertou pen_winner 
+            return (max(1, weight)*base_points) - weight  # Errou placar exato do empate  e errou pen_winner 
         return base_points* weight
 
 

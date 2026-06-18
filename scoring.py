@@ -116,7 +116,7 @@ def calculate_match_points(
         if guess_s1 == real_s1 or guess_s2 == real_s2:
             base_points += 1  # Acertou vencedor e um dos placares (ex: palpite 2×0, real 2×1)
         
-        elif abs((guess_s1 - guess_s2) ==  abs(real_s1 - real_s2)):
+        elif abs(guess_s1 - guess_s2) == abs(real_s1 - real_s2):
             base_points += 1  # Acertou vencedor e placares próximos (ex: palpite 2×0, real 3×1)
         
         return base_points * weight

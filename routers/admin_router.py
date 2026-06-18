@@ -316,3 +316,56 @@ def sync_external_results(db: Session = Depends(get_db)):
 
     db.commit()
     return {"status": "ok", "matches_synced": updated_count}
+
+
+@router.post("/recalculate-all-points")
+def recalculate_all_points(db: Session = Depends(get_db)):
+    """
+    Rota de Manutenção: Recalcula a pontuação de TODOS os jogos já finalizados 
+    usando a fórmula matemática mais recente do scoring.py.
+    """
+    # 1. Tira foto do ranking atual para as setinhas não enlouquecerem
+    snapshot_ranking_positions(db)
+    
+    # 2. Puxa todos os jogos da API para saber a fase (round) de cada um
+    all_matches = {m["id"]: m.get("round") for m in get_all_matches()}
+    
+    # 3. Puxa todos os resultados oficiais já salvos no banco
+    resultados_oficiais = db.exec(select(MatchResult)).all()
+    
+    jogos_recalculados = 0
+    palpites_atualizados = 0
+    
+    # 4. Passa por cada jogo finalizado
+    for resultado in resultados_oficiais:
+        match_round = all_matches.get(resultado.match_id)
+        
+        # Puxa todos os palpites feitos para este jogo
+        guesses = db.exec(select(Guess).where(Guess.match_id == resultado.match_id)).all()
+        
+        for g in guesses:
+            # Chama a fórmula de pontos (que agora está com o abs() corrigido!)
+            g.points = calculate_match_points(
+                guess_s1=g.score1,
+                guess_s2=g.score2,
+                real_s1=resultado.score1,
+                real_s2=resultado.score2,
+                match_round=match_round,
+                guess_pen_winner=g.pen_winner,
+                real_pen_winner=resultado.pen_winner,
+            )
+            g.locked = True
+            palpites_atualizados += 1
+            
+        jogos_recalculados += 1
+
+    # 5. Salva a correção massiva no banco
+    db.commit()
+    
+    return {
+        "status": "ok", 
+        "message": "Recálculo em massa concluído com sucesso!",
+        "jogos_processados": jogos_recalculados,
+        "palpites_corrigidos": palpites_atualizados
+    }
+

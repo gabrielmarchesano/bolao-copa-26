@@ -341,8 +341,6 @@ def update_my_codinome(
     current_user: User = Depends(get_current_user),
 ):
     """Muda o codinome do usuário num bolão específico, desde que a Copa não tenha começado."""
-    if has_tournament_started():
-        raise HTTPException(400, "A competição já começou. Não é mais possível alterar o codinome.")
         
     codinome = payload.new_codinome.strip()
     if not codinome or len(codinome) > 40:

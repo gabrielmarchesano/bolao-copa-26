@@ -65,6 +65,11 @@ def calculate_match_points(
 
  
     """
+
+    if guess_s1 is None or guess_s2 is None: 
+       return 0
+
+
     weight = _phase_weight(match_round)
 
     def _winner(s1: int, s2: int) -> int:

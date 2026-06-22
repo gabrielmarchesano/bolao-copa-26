@@ -1256,13 +1256,13 @@ html, body{ max-width:100%; overflow-x:hidden; }
             </a>
           </div>
           <div style="display:flex; gap: 8px; align-items:flex-start;">
-            <button class="btn-modal secondary" id="btnEditBolao" style="font-size:12px; white-space:nowrap; padding: 10px 16px;">
+            <button class="btn-modal secondary" id="btnEditBolao" style="font-size:12px; white-space:nowrap; padding: 10px 16px; display:none;">
               Editar
             </button>
             <button class="btn-modal secondary" id="btnInviteDetail" style="font-size:12px; white-space:nowrap; padding: 10px 16px;">
               Convidar
             </button>
-            <button class="btn-modal secondary" id="btnDeleteBolao" style="font-size:12px; white-space:nowrap; padding: 10px 16px; color:var(--danger); border-color:var(--danger);">
+            <button class="btn-modal secondary" id="btnDeleteBolao" style="font-size:12px; white-space:nowrap; padding: 10px 16px; color:var(--danger); border-color:var(--danger); display:none;">
               Deletar
             </button>
           </div>
@@ -1523,6 +1523,28 @@ html, body{ max-width:100%; overflow-x:hidden; }
   </div>
 </div>
 
+<div class="modal-backdrop" id="modalInviteConfirm">
+  <div class="modal">
+    <h2>Convite Recebido!</h2>
+    <p class="modal-sub" style="margin-bottom: 16px;">
+      Você está entrando no bolão: <br>
+      <strong id="inviteBolaoName" style="color: var(--navy); font-size: 18px; display: inline-block; margin-top: 4px;"></strong>
+    </p>
+    
+    <form id="formInviteConfirm" novalidate>
+      <input type="hidden" id="inviteCodeHidden">
+      <div class="form-group">
+        <label>Como você quer ser chamado(a) neste bolão?</label>
+        <input type="text" id="inviteCodinome" placeholder="Ex: Roger Machado" required />
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-modal secondary" onclick="document.getElementById('modalInviteConfirm').classList.remove('open')">Cancelar</button>
+        <button type="submit" class="btn-modal primary">Confirmar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1777,6 +1799,9 @@ function openBolaoDetail(id, name, inviteCode, description, isRestoring = false)
   document.getElementById('torneiosListContainer').hidden = true;
   document.getElementById('bolaoDetailContainer').hidden = false;
 
+  document.getElementById('btnEditBolao').style.display = 'none';
+  document.getElementById('btnDeleteBolao').style.display = 'none';
+
   document.getElementById('detailBolaoTitle').textContent = name;
   document.getElementById('detailBolaoDesc').textContent = description;
 
@@ -1888,6 +1913,13 @@ async function loadRanking(bolaoId, bolaoName) {
 
         // TRUQUE: O backend só manda 'real_name' se você for o dono.
         const isHost = rows.length > 0 && rows[0].real_name !== null;
+        
+
+        if (isHost) {
+            document.getElementById('btnEditBolao').style.display = 'inline-block';
+            document.getElementById('btnDeleteBolao').style.display = 'inline-block';
+        }
+
 
         // Salva os dados para a função do WhatsApp conseguir acessar
         window.currentRankingData = rows;
@@ -2354,6 +2386,63 @@ document.getElementById('formJoin').onsubmit = async (e) => {
     showToast('Entrou no bolão!');
     loadMyBoloes();
   } catch(err){ alert('Código inválido'); }
+};
+
+async function checkInviteLink() {
+    const params = new URLSearchParams(window.location.search);
+    const inviteCode = params.get('invite');
+    
+    if (inviteCode) {
+        // Limpa a URL pra não ficar o código preso se o usuário der F5 depois
+        window.history.replaceState({}, document.title, window.location.pathname);
+        
+        try {
+            // A sua rota de preview já existe no boloes_router.py!
+            const r = await authFetch(`/boloes/preview/${inviteCode}`);
+            if (!r.ok) throw new Error('Convite inválido ou expirado.');
+            const bolao = await r.json();
+            
+            if (bolao.is_member) {
+                showToast(`Você já participa do bolão ${bolao.name}!`);
+                activateTab('torneios');
+                return;
+            }
+            
+            // Preenche e exibe o modal
+            document.getElementById('inviteBolaoName').textContent = bolao.name;
+            document.getElementById('inviteCodeHidden').value = inviteCode;
+            document.getElementById('modalInviteConfirm').classList.add('open');
+            
+        } catch (e) {
+            showToast(e.message);
+        }
+    }
+}
+
+// Quando o usuário clicar em "Confirmar"
+document.getElementById('formInviteConfirm').onsubmit = async (e) => {
+    e.preventDefault();
+    const code = document.getElementById('inviteCodeHidden').value;
+    const codinome = document.getElementById('inviteCodinome').value.trim();
+    
+    try {
+        const r = await authFetch('/boloes/join', {
+            method: 'POST',
+            body: JSON.stringify({ invite_code: code, codinome: codinome })
+        });
+        
+        if (!r.ok) {
+            const err = await r.json();
+            throw new Error(err.detail || 'Erro ao entrar.');
+        }
+        
+        document.getElementById('modalInviteConfirm').classList.remove('open');
+        showToast('Você entrou no bolão com sucesso!');
+        activateTab('torneios'); 
+        loadMyBoloes();
+    } catch(e) { 
+        alert(e.message); 
+    }
 };
 
 document.getElementById('formEdit').onsubmit = async (e) => {
@@ -2854,6 +2943,9 @@ async function initApp() {
     fetchNotifications();
     setInterval(fetchNotifications, 30000);
 
+
+    await checkInviteLink();
+    
     // 2. Busca se tinha algo anotado na memória antes do F5
     const savedMainTab = sessionStorage.getItem('activeMainTab') || 'home';
     const savedBolaoStr = sessionStorage.getItem('activeBolao');

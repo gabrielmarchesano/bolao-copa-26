@@ -139,10 +139,13 @@ def create_or_update_guess(
     """
     membership = get_membership_or_403(bolao_id, current_user, db)
     match = _find_match(payload.match_id)
-    _validate_guess_payload(payload, match)
 
-    # Se palpite NÃO for empate, zera pen_winner (user mudou de ideia)
-    pen = payload.pen_winner if payload.score1 == payload.score2 else 0
+    # 🟢 A TRAVA VEM AQUI: Zera o pênalti fantasma direto no payload
+    if payload.score1 != payload.score2:
+        payload.pen_winner = 0
+
+    # 🟢 AGORA SIM, VALIDA AS REGRAS (não vai mais estourar o Erro 400)
+    _validate_guess_payload(payload, match)
 
     existing = db.exec(
         select(Guess).where(
@@ -154,7 +157,7 @@ def create_or_update_guess(
     if existing:
         existing.score1 = payload.score1
         existing.score2 = payload.score2
-        existing.pen_winner = pen
+        existing.pen_winner = payload.pen_winner # Atualizado para usar o payload direto
         existing.updated_at = datetime.utcnow()
         guess = existing
     else:
@@ -163,7 +166,7 @@ def create_or_update_guess(
             match_id=payload.match_id,
             score1=payload.score1,
             score2=payload.score2,
-            pen_winner=pen,
+            pen_winner=payload.pen_winner, # Atualizado para usar o payload direto
         )
         db.add(guess)
 

@@ -2077,12 +2077,29 @@ async function loadBolaoGuesses(bolaoId){
     if (!r.ok) throw new Error('Erro ao carregar jogos');
     _guessState.data = await r.json();
 
-    let activePhase = 'groups';
+    // Fase inicial: acompanha a fase "viva" do torneio.
+    // Conforme as fases vão fechando, a abertura "anda" sozinha para a próxima.
+    const hasGames = info => info && (info.matches_count > 0 || info.groups || info.matches);
+    let activePhase = null;
+    // 1) primeira fase ABERTA para palpite
     for (const p of PHASE_ORDER) {
       const info = _guessState.data.phases[p];
       if (info && info.can_guess && !info.is_locked) { activePhase = p; break; }
     }
-    _guessState.activePhase = activePhase;
+    // 2) senão, primeira fase com jogos que ainda não fechou (ex.: "breve")
+    if (!activePhase) {
+      for (const p of PHASE_ORDER) {
+        const info = _guessState.data.phases[p];
+        if (hasGames(info) && !info.is_locked) { activePhase = p; break; }
+      }
+    }
+    // 3) senão (tudo fechado), a última fase com jogos
+    if (!activePhase) {
+      for (const p of [...PHASE_ORDER].reverse()) {
+        if (hasGames(_guessState.data.phases[p])) { activePhase = p; break; }
+      }
+    }
+    _guessState.activePhase = activePhase || 'groups';
 
     _guessState.scrollToToday = true;  // posiciona nos jogos de hoje na abertura
     renderPhaseTabs();
@@ -2185,10 +2202,20 @@ function renderPhaseContent() {
     }
 
   } else if (phaseData.matches) {
-    // Mata-mata: sempre cronológico (não tem grupo)
-    body = [...phaseData.matches].sort(byKickoff)
-      .map(m => renderGuessCard(m, myGuesses[m.id], m.is_locked, _guessState.activePhase))
-      .join('');
+    // Mata-mata: cronológico, agrupado por dia (cabeçalho de data habilita o scroll-to-today)
+    const byDate = {};
+    [...phaseData.matches].sort(byKickoff).forEach(m => {
+      const dt = formatMatchDateTime(m.datetime_brt);
+      const key = dt.dateKey || 'zzz-sem-data';
+      if (!byDate[key]) byDate[key] = { label: dt.date, items: [] };
+      byDate[key].items.push(m);
+    });
+    body = Object.keys(byDate).sort().map(k => `
+      <div class="group-heading" data-date-key="${k}">${byDate[k].label}</div>
+      ${byDate[k].items.map(m =>
+        renderGuessCard(m, myGuesses[m.id], m.is_locked, _guessState.activePhase)
+      ).join('')}
+    `).join('');
   }
 
   container.innerHTML = body;

@@ -2077,26 +2077,29 @@ async function loadBolaoGuesses(bolaoId){
     if (!r.ok) throw new Error('Erro ao carregar jogos');
     _guessState.data = await r.json();
 
-    // Fase inicial: acompanha a fase "viva" do torneio.
-    // Conforme as fases vão fechando, a abertura "anda" sozinha para a próxima.
-    const hasGames = info => info && (info.matches_count > 0 || info.groups || info.matches);
+    // Fase inicial: a fase "atual" do torneio, definida pelos HORÁRIOS dos jogos
+    // (não por is_locked/can_guess). Assim acerta a fase mesmo quando ela já
+    // travou para palpites porque os jogos começaram a rolar.
+    const phaseMatches = info => {
+      if (!info) return [];
+      if (Array.isArray(info.matches)) return info.matches;          // mata-mata
+      if (info.groups) return Object.values(info.groups).flat();     // grupos
+      return [];
+    };
+    const kickoffMs = m => m.datetime_brt ? new Date(m.datetime_brt).getTime() : Infinity;
+    const GRACE_MS = 3 * 60 * 60 * 1000;   // ~3h de tolerância p/ jogo em andamento
+    const nowMs = Date.now();
+
     let activePhase = null;
-    // 1) primeira fase ABERTA para palpite
+    // 1) primeira fase (em ordem) que ainda tem jogo por vir ou em andamento
     for (const p of PHASE_ORDER) {
-      const info = _guessState.data.phases[p];
-      if (info && info.can_guess && !info.is_locked) { activePhase = p; break; }
+      const ms = phaseMatches(_guessState.data.phases[p]);
+      if (ms.length && ms.some(m => kickoffMs(m) >= nowMs - GRACE_MS)) { activePhase = p; break; }
     }
-    // 2) senão, primeira fase com jogos que ainda não fechou (ex.: "breve")
-    if (!activePhase) {
-      for (const p of PHASE_ORDER) {
-        const info = _guessState.data.phases[p];
-        if (hasGames(info) && !info.is_locked) { activePhase = p; break; }
-      }
-    }
-    // 3) senão (tudo fechado), a última fase com jogos
+    // 2) torneio encerrado: última fase com jogos
     if (!activePhase) {
       for (const p of [...PHASE_ORDER].reverse()) {
-        if (hasGames(_guessState.data.phases[p])) { activePhase = p; break; }
+        if (phaseMatches(_guessState.data.phases[p]).length) { activePhase = p; break; }
       }
     }
     _guessState.activePhase = activePhase || 'groups';

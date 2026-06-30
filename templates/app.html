@@ -3102,9 +3102,9 @@ function _renderGuessesView(term){
 // Render de cada entrada — item 2 (um participante)
 function _renderMemberItem(it){
   let off = '-';
-  if(m.official) {
-     off = `${m.official.score1} x ${m.official.score2}`;
-     if(m.official.pen_s1 != null) off += ` (${m.official.pen_s1}x${m.official.pen_s2} pen)`;
+  if(it.official) {
+     off = `${it.official.score1} x ${it.official.score2}`;
+     if(it.official.pen_s1 != null) off += ` (${it.official.pen_s1}x${it.official.pen_s2} pen)`;
   }
   const palpite = it.guess ? `${it.guess.score1} x ${it.guess.score2}` : 'não palpitou';
   const pts = it.guess ? `${it.guess.points} pts` : '';

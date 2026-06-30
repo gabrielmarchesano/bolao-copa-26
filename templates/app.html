@@ -2291,6 +2291,9 @@ function renderGuessCard(match, myGuess, phaseLocked, phaseKey, groupLabel = '')
       ? `Seu palpite: ${g.score1} x ${g.score2} - ${g.points} pts`
       : `Você não enviou palpite para este jogo.`;
 
+    const penHtml1 = penS1 != null ? `<span style="font-size: 14px; font-weight: 700; color: var(--muted); margin-left: 4px;">(${penS1})</span>` : '';
+    const penHtml2 = penS2 != null ? `<span style="font-size: 14px; font-weight: 700; color: var(--muted); margin-right: 4px;">(${penS2})</span>` : '';
+
     return `
     <div class="guess-card locked" data-match-id="${match.id}">
       ${groupTag}

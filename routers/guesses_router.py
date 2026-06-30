@@ -74,17 +74,20 @@ def is_match_locked_for_editing(match: dict) -> bool:
 
 
 def _official_results_map(db: Session) -> dict:
-    """Resultado oficial por match_id (API externa + override manual do admin)."""
     official = {}
     for m in get_all_matches():
         if m.get("real_s1") is not None and m.get("real_s2") is not None:
             official[m["id"]] = {
                 "score1": m["real_s1"], "score2": m["real_s2"],
+                "pen_s1": m.get("real_pen_s1"), "pen_s2": m.get("real_pen_s2"),
                 "pen_winner": m.get("real_pen_winner", 0),
             }
     for r in db.exec(select(MatchResult)).all():
+        base = official.get(r.match_id, {})
         official[r.match_id] = {
-            "score1": r.score1, "score2": r.score2, "pen_winner": r.pen_winner,
+            "score1": r.score1, "score2": r.score2,
+            "pen_s1": base.get("pen_s1"), "pen_s2": base.get("pen_s2"),
+            "pen_winner": r.pen_winner,
         }
     return official
 
@@ -246,15 +249,20 @@ def guessable(
             official_results[m["id"]] = {
                 "score1": m["real_s1"],
                 "score2": m["real_s2"],
+                "pen_s1": m.get("real_pen_s1"),
+                "pen_s2": m.get("real_pen_s2"),
                 "pen_winner": m.get("real_pen_winner", 0),
             }
 
     # Override: tudo que está no MatchResult (injeção manual do admin) vence
     results_db = db.exec(select(MatchResult)).all()
     for r in results_db:
+        base = official_results.get(r.match_id, {})
         official_results[r.match_id] = {
             "score1": r.score1,
             "score2": r.score2,
+            "pen_s1": base.get("pen_s1"),
+            "pen_s2": base.get("pen_s2"),
             "pen_winner": r.pen_winner,
         }
 

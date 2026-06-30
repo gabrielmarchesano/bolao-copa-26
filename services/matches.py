@@ -9,6 +9,7 @@ Responsabilidades:
   - Mapeamento país → código ISO (bandeiras via flagcdn.com)
   - Queries: upcoming / all / by_group / by_date
 """
+from curses import raw
 import logging
 import time
 from datetime import datetime, timedelta, timezone
@@ -308,21 +309,29 @@ def _enrich_match(raw: dict, idx: int) -> dict:
     
     # 3. Tratamento de placares e ganhador de pênaltis
     score_obj = raw.get("score", {})
-    ft = score_obj.get("fullTime", {}) or score_obj.get("regularTime") or score_obj.get("halfTime") or {}
+    
     pen = score_obj.get("penalties", {}) or {}
-    
-    # O fullTime da Football-Data já inclui a prorrogação
-    s1 = ft.get("home")
-    s2 = ft.get("away")
-    
-    pen_winner = 0
     pen_home = pen.get("home")
     pen_away = pen.get("away")
+    
+    pen_winner = 0
     if pen_home is not None and pen_away is not None:
         if pen_home > pen_away:
             pen_winner = 1
         elif pen_away > pen_home:
             pen_winner = 2
+
+    # Correção: Ignorar o vazamento de pênaltis no fullTime usando regularTime + extraTime
+    reg = score_obj.get("regularTime", {}) or {}
+    ext = score_obj.get("extraTime", {}) or {}
+    ft = score_obj.get("fullTime", {}) or {}
+
+    if reg.get("home") is not None and reg.get("away") is not None:
+        s1 = reg.get("home") + (ext.get("home", 0) if ext.get("home") is not None else 0)
+        s2 = reg.get("away") + (ext.get("away", 0) if ext.get("away") is not None else 0)
+    else:
+        s1 = ft.get("home")
+        s2 = ft.get("away")
 
     # 4. Tradutor de Fases (Crucial para o phases.py não quebrar)
     stage_map = {
@@ -366,6 +375,8 @@ def _enrich_match(raw: dict, idx: int) -> dict:
         "real_s1": s1,
         "real_s2": s2,
         "real_pen_winner": pen_winner,
+        "real_pen_s1": pen_home, 
+        "real_pen_s2": pen_away,
     }
 
 

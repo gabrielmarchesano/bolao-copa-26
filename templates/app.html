@@ -1078,6 +1078,21 @@ html, body{ max-width:100%; overflow-x:hidden; }
     max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   }
 }
+  /* ===== Gráfico de evolução de pontos (aba Estatísticas) ===== */
+  .evo-wrap{ position:relative; background:var(--card,#fff); border:1px solid rgba(0,0,0,.06); border-radius:14px; padding:14px 12px 12px; margin-bottom:18px; }
+  .evo-title{ font-size:13px; font-weight:800; color:var(--navy); text-transform:uppercase; letter-spacing:.5px; margin:0 0 8px 2px; }
+  .evo-svg{ width:100%; height:auto; display:block; touch-action:none; }
+  .evo-legend{ display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:10px; }
+  .evo-chip{ display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700; color:var(--navy); cursor:pointer; user-select:none; opacity:1; transition:opacity .15s; }
+  .evo-chip.off{ opacity:.35; }
+  .evo-chip .dot{ width:11px; height:11px; border-radius:3px; flex:0 0 auto; }
+  .evo-chip .pts{ color:var(--muted); font-weight:800; }
+  .evo-tip{ position:absolute; pointer-events:none; z-index:5; background:var(--navy,#1f3a5f); color:#fff; border-radius:10px; padding:8px 10px; font-size:12px; line-height:1.5; box-shadow:0 6px 20px rgba(0,0,0,.22); opacity:0; transform:translate(-50%,0); transition:opacity .1s; max-width:230px; }
+  .evo-tip .tdate{ font-weight:800; margin-bottom:4px; opacity:.9; }
+  .evo-tip .trow{ display:flex; align-items:center; gap:6px; white-space:nowrap; }
+  .evo-tip .trow .d{ width:9px; height:9px; border-radius:2px; flex:0 0 auto; }
+  .evo-tip .trow .v{ margin-left:auto; font-weight:800; padding-left:12px; }
+  .evo-empty{ color:var(--muted); font-size:13px; padding:18px 4px; text-align:center; }
 </style>
 </head>
 <body>
@@ -1362,6 +1377,7 @@ html, body{ max-width:100%; overflow-x:hidden; }
         <p class="page-subtitle" style="margin-bottom:16px;">
           Cravadas (placar exato) e zeros — considerando só jogos já decididos.
         </p>
+        <div id="pointsEvolutionContainer"></div>
         <div id="statsContainer"></div>
       </div>
     </div>
@@ -1881,6 +1897,7 @@ function openBolaoDetail(id, name, inviteCode, description, isRestoring = false)
   loadBolaoGuesses(id);
   if (typeof loadExtraGuesses === 'function') loadExtraGuesses(id);
   loadRanking(id, name);
+  loadPointsEvolution(id);
   loadStats(id);
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -1927,6 +1944,12 @@ function activateBolaoTab(tabName, isRestoring = false) {
   // Salva qual sub-aba do bolão ele estava olhando
   if (!isRestoring) {
       sessionStorage.setItem('activeBolaoTab', tabName);
+  }
+
+  // Ao abrir Estatísticas, recarrega dados "vivos" p/ refletir a pontuação atual
+  if (!isRestoring && tabName === 'stats' && _guessState.bolaoId){
+      loadPointsEvolution(_guessState.bolaoId);
+      loadStats(_guessState.bolaoId);
   }
 }
 
@@ -2033,7 +2056,173 @@ async function loadStats(bolaoId){
       </div>`;
   } catch(e){ c.innerHTML = `<div class="calendar-empty">${e.message}</div>`; }
 }
-  
+
+/* ============================================================
+   Gráfico de evolução de pontos (aba Estatísticas)
+   Fonte: /boloes/{id}/guesses/all — jogos travados, em ordem
+   cronológica, com o `points` de cada participante já calculado.
+   Soma acumulada por dia = curva. Recalculado a cada carregamento,
+   então acompanha qualquer mudança de pontuação.
+   ============================================================ */
+const EVO_COLORS = ['#c65d3b','#1f3a5f','#2e8b57','#b8860b','#7b4fa3','#0f8b8d','#c0392b','#2c7fb8','#8e6c3a','#5c8a3a','#a03e6f','#d17b2e','#4b6584','#6d8b3c'];
+
+async function loadPointsEvolution(bolaoId){
+  const c = document.getElementById('pointsEvolutionContainer');
+  if (!c) return;
+  c.innerHTML = `<div class="evo-wrap"><div class="evo-title">Evolução dos pontos</div><div class="evo-empty">Carregando gráfico…</div></div>`;
+  try {
+    const r = await authFetch(`/boloes/${bolaoId}/guesses/all`);
+    if (!r.ok) throw new Error('Erro ao carregar o gráfico.');
+    const data = await r.json();
+    renderPointsEvolution(c, data.matches || []);
+  } catch(e){
+    c.innerHTML = `<div class="evo-wrap"><div class="evo-title">Evolução dos pontos</div><div class="evo-empty">${escapeHtml(e.message)}</div></div>`;
+  }
+}
+
+function _evoNiceStep(raw){
+  if (!isFinite(raw) || raw <= 0) return 1;
+  const pow = Math.pow(10, Math.floor(Math.log10(raw)));
+  const f = raw / pow;
+  const nice = f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10;
+  return Math.max(1, nice * pow);
+}
+
+function renderPointsEvolution(container, matches){
+  // participantes vistos em qualquer jogo
+  const nameById = {};
+  (matches || []).forEach(m => (m.guesses || []).forEach(g => { nameById[g.membership_id] = g.codinome; }));
+  let ids = Object.keys(nameById);
+
+  // snapshots por DATA, só de jogos já decididos (com resultado oficial)
+  const decided = (matches || []).filter(m => m.official)
+    .sort((a, b) => (a.datetime_brt || '').localeCompare(b.datetime_brt || ''));
+  const totals = {}; ids.forEach(id => totals[id] = 0);
+  const dateMap = new Map();  // dateKey -> { label, totals:{mid:acumulado} }
+  decided.forEach(m => {
+    (m.guesses || []).forEach(g => { totals[g.membership_id] = (totals[g.membership_id] || 0) + (g.points || 0); });
+    const dt = formatMatchDateTime(m.datetime_brt);
+    const key = dt.dateKey || (m.datetime_brt || '').slice(0, 10);
+    dateMap.set(key, { label: (dt.date || key), totals: Object.assign({}, totals) });
+  });
+  const cols = [...dateMap.values()];
+
+  if (ids.length === 0 || cols.length < 2){
+    container.innerHTML = `<div class="evo-wrap"><div class="evo-title">Evolução dos pontos</div>`
+      + `<div class="evo-empty">O gráfico aparece quando houver pelo menos dois dias com jogos decididos.</div></div>`;
+    return;
+  }
+
+  // ordena por pontuação final (desc) → cores/legenda estáveis
+  const finalTotals = cols[cols.length - 1].totals;
+  ids.sort((a, b) => (finalTotals[b] || 0) - (finalTotals[a] || 0));
+  const colorOf = {}; ids.forEach((id, i) => colorOf[id] = EVO_COLORS[i % EVO_COLORS.length]);
+
+  // geometria
+  const W = 820, H = 380, padL = 44, padR = 16, padT = 16, padB = 46;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const n = cols.length;
+  const maxVal = Math.max(1, ...cols.map(c => Math.max(0, ...ids.map(id => c.totals[id] || 0))));
+  const step = _evoNiceStep(maxVal / 4);
+  const niceMax = Math.max(step, Math.ceil(maxVal / step) * step);
+  const xAt = i => padL + (n === 1 ? plotW / 2 : plotW * i / (n - 1));
+  const yAt = v => padT + plotH * (1 - (v / niceMax));
+
+  let grid = '';
+  for (let v = 0; v <= niceMax + 0.001; v += step){
+    const y = yAt(v);
+    grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" class="evo-grid"/>`;
+    grid += `<text x="${padL - 8}" y="${(y + 4).toFixed(1)}" class="evo-axis" text-anchor="end">${v}</text>`;
+  }
+
+  const everyX = Math.ceil(n / 9);
+  let xlab = '';
+  cols.forEach((c, i) => {
+    if (i % everyX !== 0 && i !== n - 1) return;
+    xlab += `<text x="${xAt(i).toFixed(1)}" y="${H - padB + 18}" class="evo-axis" text-anchor="middle">${escapeHtml(c.label)}</text>`;
+  });
+
+  let series = '';
+  ids.forEach(id => {
+    const pts = cols.map((c, i) => `${xAt(i).toFixed(1)},${yAt(c.totals[id] || 0).toFixed(1)}`).join(' ');
+    series += `<polyline class="evo-line" data-sid="${id}" points="${pts}" fill="none" stroke="${colorOf[id]}"/>`;
+    series += cols.map((c, i) => `<circle class="evo-node" data-sid="${id}" cx="${xAt(i).toFixed(1)}" cy="${yAt(c.totals[id] || 0).toFixed(1)}" r="2.6" fill="${colorOf[id]}"/>`).join('');
+  });
+
+  const guide = `<line id="evoGuide" class="evo-guide" x1="0" y1="${padT}" x2="0" y2="${padT + plotH}" style="opacity:0"/>`;
+
+  const svg = `<svg class="evo-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Evolução dos pontos por participante">`
+    + `<style>
+        .evo-grid{stroke:rgba(0,0,0,.07);stroke-width:1;}
+        .evo-axis{fill:var(--muted,#8a8a8a);font-size:11px;font-weight:600;}
+        .evo-line{stroke-width:2.4;stroke-linejoin:round;stroke-linecap:round;}
+        .evo-guide{stroke:var(--navy,#1f3a5f);stroke-width:1;stroke-dasharray:4 4;}
+        .evo-line.dim,.evo-node.dim{opacity:.1;}
+      </style>`
+    + grid + xlab + guide + series
+    + `</svg>`;
+
+  const legend = `<div class="evo-legend">` + ids.map(id =>
+      `<span class="evo-chip" data-sid="${id}"><span class="dot" style="background:${colorOf[id]}"></span>`
+      + `${escapeHtml(nameById[id])} <span class="pts">${finalTotals[id] || 0}</span></span>`
+    ).join('') + `</div>`;
+
+  container.innerHTML = `<div class="evo-wrap">`
+    + `<div class="evo-title">Evolução dos pontos</div>`
+    + svg + legend
+    + `<div class="evo-tip" id="evoTip"></div>`
+    + `</div>`;
+
+  try { _wireEvoInteractions(container, { cols, ids, nameById, colorOf, xAt, W }); } catch(_){}
+}
+
+function _wireEvoInteractions(container, ctx){
+  const { cols, ids, nameById, colorOf, xAt, W } = ctx;
+  const svg = container.querySelector('.evo-svg');
+  const tip = container.querySelector('#evoTip');
+  const guide = container.querySelector('#evoGuide');
+  const wrap = container.querySelector('.evo-wrap');
+  if (!svg || !tip || !guide || !wrap) return;
+  const hidden = new Set();
+  const n = cols.length;
+
+  container.querySelectorAll('.evo-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const sid = chip.getAttribute('data-sid');
+      if (hidden.has(sid)) hidden.delete(sid); else hidden.add(sid);
+      chip.classList.toggle('off', hidden.has(sid));
+      svg.querySelectorAll('[data-sid="' + sid + '"]').forEach(el => el.classList.toggle('dim', hidden.has(sid)));
+    });
+  });
+
+  function idxFromClientX(clientX){
+    const rect = svg.getBoundingClientRect();
+    const xView = ((clientX - rect.left) / rect.width) * W;
+    let best = 0, bd = Infinity;
+    for (let i = 0; i < n; i++){ const d = Math.abs(xAt(i) - xView); if (d < bd){ bd = d; best = i; } }
+    return best;
+  }
+  function showAt(i){
+    const gx = xAt(i), c = cols[i];
+    guide.setAttribute('x1', gx); guide.setAttribute('x2', gx); guide.style.opacity = '1';
+    const rows = ids.filter(id => !hidden.has(id)).map(id => ({ id, v: c.totals[id] || 0 })).sort((a, b) => b.v - a.v);
+    tip.innerHTML = `<div class="tdate">${escapeHtml(c.label)}</div>` + rows.map(r =>
+      `<div class="trow"><span class="d" style="background:${colorOf[r.id]}"></span>`
+      + `<span>${escapeHtml(nameById[r.id])}</span><span class="v">${r.v}</span></div>`).join('');
+    const wrapRect = wrap.getBoundingClientRect(), svgRect = svg.getBoundingClientRect();
+    const pxX = (svgRect.left - wrapRect.left) + (gx / W) * svgRect.width;
+    tip.style.left = Math.min(Math.max(pxX, 70), wrapRect.width - 70) + 'px';
+    tip.style.top = ((svgRect.top - wrapRect.top) + 8) + 'px';
+    tip.style.opacity = '1';
+  }
+  function hide(){ tip.style.opacity = '0'; guide.style.opacity = '0'; }
+
+  svg.addEventListener('mousemove', e => showAt(idxFromClientX(e.clientX)));
+  svg.addEventListener('mouseleave', hide);
+  svg.addEventListener('touchstart', e => { if (e.touches[0]) showAt(idxFromClientX(e.touches[0].clientX)); }, { passive: true });
+  svg.addEventListener('touchmove', e => { if (e.touches[0]) showAt(idxFromClientX(e.touches[0].clientX)); }, { passive: true });
+}
+
 function gerarTabelaWhatsApp(bolaoName) {
     const ranking = window.currentRankingData || [];
     let text = `🏆 *RANKING: ${bolaoName}* 🏆\n\n`;
@@ -2280,9 +2469,6 @@ function renderGuessCard(match, myGuess, phaseLocked, phaseKey, groupLabel = '')
   const realScore1 = official ? official.score1 : match.real_s1;
   const realScore2 = official ? official.score2 : match.real_s2;
 
-  const penS1 = official ? official.pen_s1 : match.real_pen_s1;
-  const penS2 = official ? official.pen_s2 : match.real_pen_s2;
-
   // Verifica se acabou baseado no placar real
   const isFinished = realScore1 !== null && realScore1 !== undefined;
 
@@ -2291,34 +2477,25 @@ function renderGuessCard(match, myGuess, phaseLocked, phaseKey, groupLabel = '')
       ? `Seu palpite: ${g.score1} x ${g.score2} - ${g.points} pts`
       : `Você não enviou palpite para este jogo.`;
 
-    const penHtml1 = penS1 != null ? `<span style="font-size: 14px; font-weight: 700; color: var(--muted); margin-left: 4px;">(${penS1})</span>` : '';
-    const penHtml2 = penS2 != null ? `<span style="font-size: 14px; font-weight: 700; color: var(--muted); margin-right: 4px;">(${penS2})</span>` : '';
-
     return `
-    <div class="guess-card locked" data-match-id="${match.id}">
-      ${groupTag}
-      <div class="team-col">${flag(t1)}<span>${t1.name_pt}</span></div>
+      <div class="guess-card locked" data-match-id="${match.id}">
+        ${groupTag}
+        <div class="team-col">${flag(t1)}<span>${t1.name_pt}</span></div>
 
-      <div class="score-input" style="gap: 8px; justify-content:center; border:none; background:transparent;">
-        <div style="display:flex; align-items:center;">
+        <div class="score-input" style="gap: 12px; justify-content:center; border:none; background:transparent;">
           <span style="font-size: 22px; font-weight: 800; color: var(--navy);">${realScore1}</span>
-          ${penHtml1}
-        </div>
-        <span class="x">×</span>
-        <div style="display:flex; align-items:center;">
-          ${penHtml2}
+          <span class="x">×</span>
           <span style="font-size: 22px; font-weight: 800; color: var(--navy);">${realScore2}</span>
         </div>
-      </div>
 
-      <div class="team-col right"><span>${t2.name_pt}</span>${flag(t2)}</div>
+        <div class="team-col right"><span>${t2.name_pt}</span>${flag(t2)}</div>
 
-      <div class="meta-row" style="flex-direction:column; align-items:center; gap:6px; background:var(--bg-soft); padding:10px; border-radius:8px; margin-top:12px; border:none;">
-        <div style="font-size:10px; color:var(--navy-ink); font-weight:800; text-transform:uppercase; opacity:0.6;">Resultado Oficial</div>
-        <div style="font-size:13px; color:var(--navy-ink); font-weight:600;">${guessSummary}</div>
+        <div class="meta-row" style="flex-direction:column; align-items:center; gap:6px; background:var(--bg-soft); padding:10px; border-radius:8px; margin-top:12px; border:none;">
+          <div style="font-size:10px; color:var(--navy-ink); font-weight:800; text-transform:uppercase; opacity:0.6;">Resultado Oficial</div>
+          <div style="font-size:13px; color:var(--navy-ink); font-weight:600;">${guessSummary}</div>
+        </div>
       </div>
-    </div>
-  `;
+    `;
   }
 
   const dateTxt = formatMatchDateTime(match.datetime_brt);
@@ -3101,11 +3278,7 @@ function _renderGuessesView(term){
 
 // Render de cada entrada — item 2 (um participante)
 function _renderMemberItem(it){
-  let off = '-';
-  if(it.official) {
-     off = `${it.official.score1} x ${it.official.score2}`;
-     if(it.official.pen_s1 != null) off += ` (${it.official.pen_s1}x${it.official.pen_s2} pen)`;
-  }
+  const off = it.official ? `${it.official.score1} x ${it.official.score2}` : '—';
   const palpite = it.guess ? `${it.guess.score1} x ${it.guess.score2}` : 'não palpitou';
   const pts = it.guess ? `${it.guess.points} pts` : '';
   return `
@@ -3123,11 +3296,7 @@ function _renderMemberItem(it){
 
 // Render de cada entrada — item 3 (todos por jogo)
 function _renderAllMatch(m){
-  let off = '—';
-  if(m.official) {
-     off = `${m.official.score1} x ${m.official.score2}`;
-     if(m.official.pen_s1 != null) off += ` (${m.official.pen_s1}x${m.official.pen_s2} pen)`;
-  }
+  const off = m.official ? `${m.official.score1} x ${m.official.score2}` : '—';
   const linhas = m.guesses.map(g => `
     <div style="display:flex; justify-content:space-between; padding:4px 0; font-size:12px;">
       <span style="color:var(--navy-ink); font-weight:600;">${escapeHtml(g.codinome)}</span>

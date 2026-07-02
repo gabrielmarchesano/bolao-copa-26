@@ -2065,6 +2065,7 @@ async function loadStats(bolaoId){
    então acompanha qualquer mudança de pontuação.
    ============================================================ */
 const EVO_COLORS = ['#c65d3b','#1f3a5f','#2e8b57','#b8860b','#7b4fa3','#0f8b8d','#c0392b','#2c7fb8','#8e6c3a','#5c8a3a','#a03e6f','#d17b2e','#4b6584','#6d8b3c'];
+let _evoLastMatches = null;
 
 async function loadPointsEvolution(bolaoId){
   const c = document.getElementById('pointsEvolutionContainer');
@@ -2103,7 +2104,8 @@ function renderPointsEvolution(container, matches){
     (m.guesses || []).forEach(g => { totals[g.membership_id] = (totals[g.membership_id] || 0) + (g.points || 0); });
     const dt = formatMatchDateTime(m.datetime_brt);
     const key = dt.dateKey || (m.datetime_brt || '').slice(0, 10);
-    dateMap.set(key, { label: (dt.date || key), totals: Object.assign({}, totals) });
+    const axis = /^\d{4}-\d{2}-\d{2}$/.test(key) ? (key.slice(8, 10) + '/' + key.slice(5, 7)) : (dt.date || key);
+    dateMap.set(key, { label: (dt.date || key), axis, totals: Object.assign({}, totals) });
   });
   const cols = [...dateMap.values()];
 
@@ -2118,8 +2120,14 @@ function renderPointsEvolution(container, matches){
   ids.sort((a, b) => (finalTotals[b] || 0) - (finalTotals[a] || 0));
   const colorOf = {}; ids.forEach((id, i) => colorOf[id] = EVO_COLORS[i % EVO_COLORS.length]);
 
-  // geometria
-  const W = 820, H = 380, padL = 44, padR = 16, padT = 16, padB = 46;
+  // geometria responsiva: acompanha a largura real disponível, para caber e
+  // manter as fontes legíveis no celular (viewBox ~ largura da tela → escala ~1).
+  const availW = container.getBoundingClientRect().width || 0;
+  const screenW = availW > 40 ? availW : (window.innerWidth || 400);
+  const W = Math.round(Math.min(Math.max(screenW - 6, 300), 900));
+  const narrow = W < 520;
+  const H = Math.round(Math.min(Math.max(W * 0.55, 240), 380));
+  const padL = 34, padR = 12, padT = 14, padB = narrow ? 38 : 44;
   const plotW = W - padL - padR, plotH = H - padT - padB;
   const n = cols.length;
   const maxVal = Math.max(1, ...cols.map(c => Math.max(0, ...ids.map(id => c.totals[id] || 0))));
@@ -2127,26 +2135,31 @@ function renderPointsEvolution(container, matches){
   const niceMax = Math.max(step, Math.ceil(maxVal / step) * step);
   const xAt = i => padL + (n === 1 ? plotW / 2 : plotW * i / (n - 1));
   const yAt = v => padT + plotH * (1 - (v / niceMax));
+  const axisFont = narrow ? 12 : 11;   // ~px reais (escala ~1)
+  const rNode = narrow ? 2.0 : 2.6;
+  const wLine = narrow ? 2.0 : 2.4;
 
   let grid = '';
   for (let v = 0; v <= niceMax + 0.001; v += step){
     const y = yAt(v);
     grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" class="evo-grid"/>`;
-    grid += `<text x="${padL - 8}" y="${(y + 4).toFixed(1)}" class="evo-axis" text-anchor="end">${v}</text>`;
+    grid += `<text x="${(padL - 6).toFixed(1)}" y="${(y + 4).toFixed(1)}" class="evo-axis" text-anchor="end">${v}</text>`;
   }
 
-  const everyX = Math.ceil(n / 9);
+  // nº de rótulos do eixo X conforme o espaço (~48px por rótulo)
+  const maxLabels = Math.max(2, Math.floor(plotW / 48));
+  const everyX = Math.max(1, Math.ceil(n / maxLabels));
   let xlab = '';
   cols.forEach((c, i) => {
     if (i % everyX !== 0 && i !== n - 1) return;
-    xlab += `<text x="${xAt(i).toFixed(1)}" y="${H - padB + 18}" class="evo-axis" text-anchor="middle">${escapeHtml(c.label)}</text>`;
+    xlab += `<text x="${xAt(i).toFixed(1)}" y="${(H - padB + 16).toFixed(1)}" class="evo-axis" text-anchor="middle">${escapeHtml(c.axis || c.label)}</text>`;
   });
 
   let series = '';
   ids.forEach(id => {
     const pts = cols.map((c, i) => `${xAt(i).toFixed(1)},${yAt(c.totals[id] || 0).toFixed(1)}`).join(' ');
     series += `<polyline class="evo-line" data-sid="${id}" points="${pts}" fill="none" stroke="${colorOf[id]}"/>`;
-    series += cols.map((c, i) => `<circle class="evo-node" data-sid="${id}" cx="${xAt(i).toFixed(1)}" cy="${yAt(c.totals[id] || 0).toFixed(1)}" r="2.6" fill="${colorOf[id]}"/>`).join('');
+    series += cols.map((c, i) => `<circle class="evo-node" data-sid="${id}" cx="${xAt(i).toFixed(1)}" cy="${yAt(c.totals[id] || 0).toFixed(1)}" r="${rNode}" fill="${colorOf[id]}"/>`).join('');
   });
 
   const guide = `<line id="evoGuide" class="evo-guide" x1="0" y1="${padT}" x2="0" y2="${padT + plotH}" style="opacity:0"/>`;
@@ -2154,8 +2167,8 @@ function renderPointsEvolution(container, matches){
   const svg = `<svg class="evo-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Evolução dos pontos por participante">`
     + `<style>
         .evo-grid{stroke:rgba(0,0,0,.07);stroke-width:1;}
-        .evo-axis{fill:var(--muted,#8a8a8a);font-size:11px;font-weight:600;}
-        .evo-line{stroke-width:2.4;stroke-linejoin:round;stroke-linecap:round;}
+        .evo-axis{fill:var(--muted,#8a8a8a);font-size:${axisFont}px;font-weight:600;}
+        .evo-line{stroke-width:${wLine};stroke-linejoin:round;stroke-linecap:round;}
         .evo-guide{stroke:var(--navy,#1f3a5f);stroke-width:1;stroke-dasharray:4 4;}
         .evo-line.dim,.evo-node.dim{opacity:.1;}
       </style>`
@@ -2174,6 +2187,20 @@ function renderPointsEvolution(container, matches){
     + `</div>`;
 
   try { _wireEvoInteractions(container, { cols, ids, nameById, colorOf, xAt, W }); } catch(_){}
+
+  // redesenha ao mudar o tamanho da tela (ex.: girar o celular), mantendo a proporção
+  _evoLastMatches = matches;
+  if (!window._evoResizeBound){
+    window._evoResizeBound = true;
+    let _t;
+    window.addEventListener('resize', () => {
+      clearTimeout(_t);
+      _t = setTimeout(() => {
+        const c = document.getElementById('pointsEvolutionContainer');
+        if (c && c.offsetParent !== null && _evoLastMatches) renderPointsEvolution(c, _evoLastMatches);
+      }, 200);
+    });
+  }
 }
 
 function _wireEvoInteractions(container, ctx){

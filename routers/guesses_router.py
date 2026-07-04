@@ -46,7 +46,7 @@ def _find_match(match_id: int) -> dict:
 
 # Quanto tempo antes do kickoff o palpite fecha.
 # (É AQUI que se muda para 5 minutos quando você for fazer aquele item pendente.)
-LOCK_OFFSET = timedelta(minutes=30)
+LOCK_OFFSET = timedelta(minutes=10)
 
 
 def _match_kickoff(match: dict):

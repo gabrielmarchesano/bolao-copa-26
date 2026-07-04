@@ -3330,7 +3330,14 @@ function _renderMemberItem(it){
      off = `${it.official.score1} x ${it.official.score2}`;
      if(it.official.pen_s1 != null) off += ` (${it.official.pen_s1}x${it.official.pen_s2} pen)`;
   }
-  const palpite = it.guess ? `${it.guess.score1} x ${it.guess.score2}` : 'não palpitou';
+  let penText = "";
+  if (isKnockout && String(g.score1) === String(g.score2) && g.pen_winner) {
+        const penTeam = g.pen_winner === 1 ? t1.name_pt : t2.name_pt;
+        // Pega as 3 primeiras letras do time e deixa maiúsculo (Ex: Equador -> EQU)
+        const shortName = penTeam.substring(0, 3).toUpperCase();
+        penText = ` (${shortName} pen)`;
+  }
+  const palpite = it.guess ? `${it.guess.score1} x ${it.guess.score2}${penText}` : 'não palpitou';
   const pts = it.guess ? `${it.guess.points} pts` : '';
   return `
     <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--divider);">

@@ -3330,8 +3330,9 @@ function _renderMemberItem(it){
      off = `${it.official.score1} x ${it.official.score2}`;
      if(it.official.pen_s1 != null) off += ` (${it.official.pen_s1}x${it.official.pen_s2} pen)`;
   }
+  
   let penText = "";
-  if (isKnockout && String(g.score1) === String(g.score2) && g.pen_winner) {
+  if (String(guess.score1) === String(guess.score2) && guess.pen_winner) {
         const penTeam = g.pen_winner === 1 ? t1.name_pt : t2.name_pt;
         // Pega as 3 primeiras letras do time e deixa maiúsculo (Ex: Equador -> EQU)
         const shortName = penTeam.substring(0, 3).toUpperCase();

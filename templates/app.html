@@ -2496,33 +2496,53 @@ function renderGuessCard(match, myGuess, phaseLocked, phaseKey, groupLabel = '')
   const realScore1 = official ? official.score1 : match.real_s1;
   const realScore2 = official ? official.score2 : match.real_s2;
 
+  const penS1 = official ? official.pen_s1 : match.real_pen_s1;
+  const penS2 = official ? official.pen_s2 : match.real_pen_s2;
+
   // Verifica se acabou baseado no placar real
   const isFinished = realScore1 !== null && realScore1 !== undefined;
 
   if (isFinished) {
+    let penText = "";
+    if (isKnockout && String(g.score1) === String(g.score2) && g.pen_winner) {
+        const penTeam = g.pen_winner === 1 ? t1.name_pt : t2.name_pt;
+        // Pega as 3 primeiras letras do time e deixa maiúsculo (Ex: Equador -> EQU)
+        const shortName = penTeam.substring(0, 3).toUpperCase();
+        penText = ` (${shortName} pen)`;
+    }
+
     const guessSummary = hasGuess
-      ? `Seu palpite: ${g.score1} x ${g.score2} - ${g.points} pts`
+      ? `Seu palpite: ${g.score1} x ${g.score2}${penText} - ${g.points} pts`
       : `Você não enviou palpite para este jogo.`;
 
-    return `
-      <div class="guess-card locked" data-match-id="${match.id}">
-        ${groupTag}
-        <div class="team-col">${flag(t1)}<span>${t1.name_pt}</span></div>
+    const penHtml1 = penS1 != null ? `<span style="font-size: 14px; font-weight: 700; color: var(--muted); margin-left: 4px;">(${penS1})</span>` : '';
+    const penHtml2 = penS2 != null ? `<span style="font-size: 14px; font-weight: 700; color: var(--muted); margin-right: 4px;">(${penS2})</span>` : '';
 
-        <div class="score-input" style="gap: 12px; justify-content:center; border:none; background:transparent;">
+    return `
+    <div class="guess-card locked" data-match-id="${match.id}">
+      ${groupTag}
+      <div class="team-col">${flag(t1)}<span>${t1.name_pt}</span></div>
+
+      <div class="score-input" style="gap: 8px; justify-content:center; border:none; background:transparent;">
+        <div style="display:flex; align-items:center;">
           <span style="font-size: 22px; font-weight: 800; color: var(--navy);">${realScore1}</span>
-          <span class="x">×</span>
+          ${penHtml1}
+        </div>
+        <span class="x">×</span>
+        <div style="display:flex; align-items:center;">
+          ${penHtml2}
           <span style="font-size: 22px; font-weight: 800; color: var(--navy);">${realScore2}</span>
         </div>
-
-        <div class="team-col right"><span>${t2.name_pt}</span>${flag(t2)}</div>
-
-        <div class="meta-row" style="flex-direction:column; align-items:center; gap:6px; background:var(--bg-soft); padding:10px; border-radius:8px; margin-top:12px; border:none;">
-          <div style="font-size:10px; color:var(--navy-ink); font-weight:800; text-transform:uppercase; opacity:0.6;">Resultado Oficial</div>
-          <div style="font-size:13px; color:var(--navy-ink); font-weight:600;">${guessSummary}</div>
-        </div>
       </div>
-    `;
+
+      <div class="team-col right"><span>${t2.name_pt}</span>${flag(t2)}</div>
+
+      <div class="meta-row" style="flex-direction:column; align-items:center; gap:6px; background:var(--bg-soft); padding:10px; border-radius:8px; margin-top:12px; border:none;">
+        <div style="font-size:10px; color:var(--navy-ink); font-weight:800; text-transform:uppercase; opacity:0.6;">Resultado Oficial</div>
+        <div style="font-size:13px; color:var(--navy-ink); font-weight:600;">${guessSummary}</div>
+      </div>
+    </div>
+  `;
   }
 
   const dateTxt = formatMatchDateTime(match.datetime_brt);
@@ -3305,7 +3325,11 @@ function _renderGuessesView(term){
 
 // Render de cada entrada — item 2 (um participante)
 function _renderMemberItem(it){
-  const off = it.official ? `${it.official.score1} x ${it.official.score2}` : '—';
+  let off = '-';
+  if(it.official) {
+     off = `${it.official.score1} x ${it.official.score2}`;
+     if(it.official.pen_s1 != null) off += ` (${it.official.pen_s1}x${it.official.pen_s2} pen)`;
+  }
   const palpite = it.guess ? `${it.guess.score1} x ${it.guess.score2}` : 'não palpitou';
   const pts = it.guess ? `${it.guess.points} pts` : '';
   return `
@@ -3323,7 +3347,11 @@ function _renderMemberItem(it){
 
 // Render de cada entrada — item 3 (todos por jogo)
 function _renderAllMatch(m){
-  const off = m.official ? `${m.official.score1} x ${m.official.score2}` : '—';
+  let off = '—';
+  if(m.official) {
+     off = `${m.official.score1} x ${m.official.score2}`;
+     if(m.official.pen_s1 != null) off += ` (${m.official.pen_s1}x${m.official.pen_s2} pen)`;
+  }
   const linhas = m.guesses.map(g => `
     <div style="display:flex; justify-content:space-between; padding:4px 0; font-size:12px;">
       <span style="color:var(--navy-ink); font-weight:600;">${escapeHtml(g.codinome)}</span>

@@ -3332,11 +3332,11 @@ function _renderMemberItem(it){
   }
   
   let penText = "";
-  if (String(it.guess.score1) === String(it.guess.score2) && it.guess.pen_winner) {
-        const penTeam = it.guess.pen_winner === 1 ? it.team1.name_pt : it.team2.name_pt;
-        // Pega as 3 primeiras letras do time e deixa maiúsculo (Ex: Equador -> EQU)
-        const shortName = penTeam.substring(0, 3).toUpperCase();
-        penText = ` (${shortName} pen)`;
+  // 🟢 CORREÇÃO: Adicionamos o "it.guess &&" no início para blindar contra palpites nulos
+  if (it.guess && String(it.guess.score1) === String(it.guess.score2) && it.guess.pen_winner) {
+      const penTeam = it.guess.pen_winner === 1 ? it.team1.name_pt : it.team2.name_pt;
+      const shortName = penTeam.substring(0, 3).toUpperCase();
+      penText = ` (${shortName} pen)`;
   }
   const palpite = it.guess ? `${it.guess.score1} x ${it.guess.score2}${penText}` : 'não palpitou';
   const pts = it.guess ? `${it.guess.points} pts` : '';

@@ -3332,8 +3332,8 @@ function _renderMemberItem(it){
   }
   
   let penText = "";
-  if (String(guess.score1) === String(guess.score2) && guess.pen_winner) {
-        const penTeam = g.pen_winner === 1 ? t1.name_pt : t2.name_pt;
+  if (String(it.guess.score1) === String(it.guess.score2) && it.guess.pen_winner) {
+        const penTeam = it.guess.pen_winner === 1 ? it.team1.name_pt : it.team2.name_pt;
         // Pega as 3 primeiras letras do time e deixa maiúsculo (Ex: Equador -> EQU)
         const shortName = penTeam.substring(0, 3).toUpperCase();
         penText = ` (${shortName} pen)`;

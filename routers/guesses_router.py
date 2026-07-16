@@ -21,7 +21,8 @@ from auth import get_current_user, get_membership_or_403
 from database import get_db
 from models import Guess, User, MatchResult, Membership, ExtraGuess, ChampionshipResult
 from schemas import GuessCreate, GuessRead
-from scoring import tournament_points_breakdown
+from scoring import tournament_points_breakdown, is_placeholder
+
 from services import (
     get_all_matches,
     get_matches_grouped_for_guessing,
@@ -94,6 +95,10 @@ def _official_results_map(db: Session) -> dict:
         }
     return official
 
+def _clean_official(value):
+    """Retorna o valor oficial limpo, ou None se for placeholder/vazio."""
+    return None if is_placeholder(value) else value
+ 
 
 def build_extra_block(db: Session, membership_id: int) -> dict:
     """
@@ -121,9 +126,12 @@ def build_extra_block(db: Session, membership_id: int) -> dict:
     g_artilheiro = extra.artilheiro if extra else None
     g_melhor = extra.melhor_jogador if extra else None
  
-    o_campeao = oficial.campeao if oficial else None
-    o_artilheiro = oficial.artilheiro if oficial else None
-    o_melhor = oficial.melhor_jogador if oficial else None
+    # Sanitiza o gabarito oficial: valores placeholder (ex: "string" do Swagger,
+    # "TBD" da API, vazio) NÃO contam como resultado real. Enquanto o torneio não
+    # acaba, o gabarito fica vazio e a caixinha mostra estado "aguardando".
+    o_campeao = _clean_official(oficial.campeao if oficial else None)
+    o_artilheiro = _clean_official(oficial.artilheiro if oficial else None)
+    o_melhor = _clean_official(oficial.melhor_jogador if oficial else None)
  
     breakdown = tournament_points_breakdown(
         guess_champion=g_campeao,
@@ -157,6 +165,7 @@ def build_extra_block(db: Session, membership_id: int) -> dict:
         "total_points": sum(f["points"] for f in fields.values()),
     }
  
+
 def _match_public(match: dict) -> dict:
     """Campos do jogo que o front precisa pra renderizar um card."""
     return {

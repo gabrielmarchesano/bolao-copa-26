@@ -128,12 +128,24 @@ def calculate_match_points(
     
     return 0
 
-
+_PLACEHOLDER_VALUES = {"", "string", "tbd", "tba", "null", "none", "-", "a definir", "n/a"}
+ 
+ 
+def is_placeholder(value: Optional[str]) -> bool:
+    """True se o valor for vazio ou um placeholder (não conta como resultado real)."""
+    if value is None:
+        return True
+    return str(value).strip().lower() in _PLACEHOLDER_VALUES
+ 
 # ============================================================================
 # PONTUAÇÃO DE TORNEIO (outrights, palpites pré-Copa)
 # ============================================================================
 def _checar_match_flexivel(palpite: Optional[str], oficial: Optional[str], threshold: float = 0.7) -> bool:
     """Valida acertos considerando minúsculas, sem acentos, substrings ou similaridade textual."""
+    
+    if is_placeholder(palpite) or is_placeholder(oficial):
+        return False
+    
     if not palpite or not oficial:
         return False
         

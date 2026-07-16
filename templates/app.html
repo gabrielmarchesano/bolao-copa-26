@@ -2977,29 +2977,54 @@ function _renderExtraResult(result) {
         { key: 'artilheiro',     inputId: 'guessArtilheiro',    slotId: 'resultArtilheiro' },
         { key: 'melhor_jogador', inputId: 'guessMelhorJogador', slotId: 'resultMelhorJogador' },
     ];
-
-    // Sem gabarito: garante que os campos voltem ao estado editável normal.
+ 
+    // Sem gabarito (torneio em andamento): a caixinha (que é o slot do resultado
+    // OFICIAL) mostra "A definir", e embaixo fica o palpite do user + aguardando.
     if (!result || !result.has_official) {
         slots.forEach(s => {
+            const f = result && result.fields ? result.fields[s.key] : null;
+            const input = document.getElementById(s.inputId);
             const slot = document.getElementById(s.slotId);
-            if (slot) { slot.style.display = 'none'; slot.innerHTML = ''; }
+            if (input) {
+                input.value = 'A definir';
+                input.disabled = true;
+                input.style.background = '#f4f5f7';
+                input.style.borderColor = 'var(--border)';
+                input.style.fontWeight = '700';
+                input.style.color = 'var(--muted)';
+                input.style.fontStyle = 'italic';
+            }
+            if (slot) {
+                const guessTxt = (f && f.guess) ? escapeHtml(f.guess)
+                    : '<span style="opacity:.6">não palpitou</span>';
+                slot.style.display = 'block';
+                slot.innerHTML = `
+                    <div style="font-size:11px; color:var(--navy-ink); font-weight:600;">
+                        Seu palpite: <strong>${guessTxt}</strong>
+                    </div>
+                    <div style="font-size:11px; color:var(--muted); font-weight:600; margin-top:2px;">
+                        Aguardando resultado
+                    </div>`;
+            }
         });
         return;
     }
-
+ 
     slots.forEach(s => {
         const f = result.fields[s.key];
         const input = document.getElementById(s.inputId);
         const slot = document.getElementById(s.slotId);
         if (!f || !slot || !input) return;
-
+ 
         // 1) Caixinha mostra o RESULTADO OFICIAL escrito dentro dela.
         input.value = f.official || '—';
         input.disabled = true;
         input.style.background = f.hit ? 'rgba(46, 204, 113, 0.12)' : '#f4f5f7';
         input.style.borderColor = f.hit ? 'var(--success)' : 'var(--border)';
         input.style.fontWeight = '800';
-
+        input.style.fontStyle = 'normal';
+        input.style.color = 'var(--navy-ink)';
+ 
         // 2) Embaixo: o palpite do usuário e quantos pontos rendeu.
         const guessTxt = f.guess ? escapeHtml(f.guess) : '<span style="opacity:.6">não palpitou</span>';
         const ptsColor = f.hit ? 'var(--success)' : 'var(--muted)';

@@ -19,8 +19,9 @@ from sqlmodel import Session, select
 
 from auth import get_current_user, get_membership_or_403
 from database import get_db
-from models import Guess, User, MatchResult, Membership
+from models import Guess, User, MatchResult, Membership, ExtraGuess, ChampionshipResult
 from schemas import GuessCreate, GuessRead
+from scoring import tournament_points_breakdown
 from services import (
     get_all_matches,
     get_matches_grouped_for_guessing,
@@ -31,6 +32,8 @@ from services import (
 )
 
 router = APIRouter(prefix="/boloes/{bolao_id}/guesses", tags=["guesses"])
+
+
 
 
 # ----------------------------------------------------------------------------
@@ -92,6 +95,68 @@ def _official_results_map(db: Session) -> dict:
     return official
 
 
+def build_extra_block(db: Session, membership_id: int) -> dict:
+    """
+    Monta o bloco de palpites bônus de um membro, com resultado oficial,
+    o palpite dele e os pontos por campo.
+ 
+    Retorno (contrato usado pelo frontend em ambos os pontos — box do usuário
+    e topo da modal de ranking):
+      {
+        "has_official": bool,          # já existe gabarito oficial?
+        "fields": {
+          "campeao":        {"official": str|None, "guess": str|None, "points": int, "hit": bool},
+          "artilheiro":     {...},
+          "melhor_jogador": {...},
+        },
+        "total_points": int,           # soma dos pontos bônus
+      }
+    """
+    extra = db.exec(
+        select(ExtraGuess).where(ExtraGuess.membership_id == membership_id)
+    ).first()
+    oficial = db.get(ChampionshipResult, 1)
+ 
+    g_campeao = extra.campeao if extra else None
+    g_artilheiro = extra.artilheiro if extra else None
+    g_melhor = extra.melhor_jogador if extra else None
+ 
+    o_campeao = oficial.campeao if oficial else None
+    o_artilheiro = oficial.artilheiro if oficial else None
+    o_melhor = oficial.melhor_jogador if oficial else None
+ 
+    breakdown = tournament_points_breakdown(
+        guess_champion=g_campeao,
+        guess_scorer=g_artilheiro,
+        guess_best_player=g_melhor,
+        real_champion=o_campeao,
+        real_scorer=o_artilheiro,
+        real_best_player=o_melhor,
+    )
+ 
+    has_official = any([o_campeao, o_artilheiro, o_melhor])
+ 
+    fields = {
+        "campeao": {
+            "official": o_campeao, "guess": g_campeao,
+            "points": breakdown["campeao"]["points"], "hit": breakdown["campeao"]["hit"],
+        },
+        "artilheiro": {
+            "official": o_artilheiro, "guess": g_artilheiro,
+            "points": breakdown["artilheiro"]["points"], "hit": breakdown["artilheiro"]["hit"],
+        },
+        "melhor_jogador": {
+            "official": o_melhor, "guess": g_melhor,
+            "points": breakdown["melhor_jogador"]["points"], "hit": breakdown["melhor_jogador"]["hit"],
+        },
+    }
+ 
+    return {
+        "has_official": has_official,
+        "fields": fields,
+        "total_points": sum(f["points"] for f in fields.values()),
+    }
+ 
 def _match_public(match: dict) -> dict:
     """Campos do jogo que o front precisa pra renderizar um card."""
     return {

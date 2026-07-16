@@ -29,10 +29,12 @@ from models import JoinRequest, Notification
 from schemas import BolaoSearchResult, JoinRequestCreate, JoinRequestRead, JoinRequestRespond, CodinomeUpdate, BolaoUpdate
 from services import notifications as notif_svc
 from services.phases import has_tournament_started
+from routers.guesses_router import build_extra_block
 
 
 
 router = APIRouter(prefix="/boloes", tags=["boloes"])
+
 
 
 @router.get("/{bolao_id}/extra-guesses")
@@ -51,10 +53,13 @@ def get_extra_guesses(
         "campeao": extra.campeao if extra else "",
         "artilheiro": extra.artilheiro if extra else "",
         "melhor_jogador": extra.melhor_jogador if extra else "",
-        "is_locked": has_tournament_started(),   # <-- única linha nova
+        "is_locked": has_tournament_started(),
+        # Resultado oficial + pontos por campo (preenchido só quando o gabarito existe).
+        # O frontend usa isto pra escrever o oficial dentro da caixinha, o palpite
+        # embaixo e quantos pontos rendeu.
+        "result": build_extra_block(db, membership.id),
     }
-
-
+ 
 
 
 @router.post("/{bolao_id}/extra-guesses")

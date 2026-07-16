@@ -153,6 +153,37 @@ def _checar_match_flexivel(palpite: Optional[str], oficial: Optional[str], thres
     return similaridade >= threshold
 
 
+
+TOURNAMENT_FIELD_POINTS = 20
+ 
+ 
+def tournament_points_breakdown(
+    guess_champion: Optional[str],
+    guess_scorer: Optional[str],
+    guess_best_player: Optional[str],
+    real_champion: Optional[str],
+    real_scorer: Optional[str],
+    real_best_player: Optional[str],
+) -> dict:
+    """
+    Detalha os pontos bônus por campo (campeao / artilheiro / melhor_jogador).
+ 
+    Retorna um dict com, por campo:
+      - hit:    bool — se acertou (fuzzy match)
+      - points: int  — pontos ganhos nesse campo (0 ou TOURNAMENT_FIELD_POINTS)
+    Só marca acerto quando existe gabarito oficial pra aquele campo.
+    """
+    def _field(guess: Optional[str], real: Optional[str]) -> dict:
+        hit = bool(real) and _checar_match_flexivel(guess, real)
+        return {"hit": hit, "points": TOURNAMENT_FIELD_POINTS if hit else 0}
+ 
+    return {
+        "campeao": _field(guess_champion, real_champion),
+        "artilheiro": _field(guess_scorer, real_scorer),
+        "melhor_jogador": _field(guess_best_player, real_best_player),
+    }
+ 
+ 
 def calculate_tournament_points(
     guess_champion: Optional[str],
     guess_scorer: Optional[str],
@@ -163,13 +194,11 @@ def calculate_tournament_points(
 ) -> int:
     """
     Pontos por palpites gerais do torneio.
-    Soma 20 pontos por acerto usando a verificação flexível (fuzzy match).
+    Soma TOURNAMENT_FIELD_POINTS por acerto usando a verificação flexível (fuzzy match).
+    Deriva do mesmo breakdown pra não divergir da exibição por campo.
     """
-    points = 0
-    if real_champion and _checar_match_flexivel(guess_champion, real_champion):
-        points += 20
-    if real_scorer and _checar_match_flexivel(guess_scorer, real_scorer):
-        points += 20    
-    if real_best_player and _checar_match_flexivel(guess_best_player, real_best_player):
-        points += 20
-    return points
+    breakdown = tournament_points_breakdown(
+        guess_champion, guess_scorer, guess_best_player,
+        real_champion, real_scorer, real_best_player,
+    )
+    return sum(f["points"] for f in breakdown.values())

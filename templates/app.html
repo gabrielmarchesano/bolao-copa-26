@@ -3470,13 +3470,36 @@ function _openGuessesModal(title, placeholder){
 
 // Bloco de palpites bônus fixado no topo da modal do participante.
 // Cada linha: rótulo + "Oficial: X" de um lado, palpite do outro, e os pontos.
-function _renderExtraBlockModal(extra){
-  if (!extra || !extra.has_official) return '';
+// Bloco de palpites bônus fixado no topo da modal do participante.
+function _renderExtraBlockModal(extra) {
+  if (!extra) return '';
+
+  // Tenta encontrar os dados nas possíveis estruturas que o seu backend possa estar enviando:
+  let fields = extra.fields || (extra.result && extra.result.fields) || null;
+  let has_off = extra.has_official || (extra.result && extra.result.has_official) || false;
+  let totalPts = extra.total_points || (extra.result && extra.result.total_points) || 0;
+
+  // Se o backend enviar os dados "soltos" (ex: extra.campeao = "Brasil") sem a chave 'fields'
+  if (!fields && (extra.campeao || extra.artilheiro || extra.melhor_jogador)) {
+      fields = {
+          campeao: { guess: extra.campeao },
+          artilheiro: { guess: extra.artilheiro },
+          melhor_jogador: { guess: extra.melhor_jogador }
+      };
+  }
+
+  // Se mesmo assim não achou palpites, aborta a renderização do bloco
+  if (!fields) return '';
+
   const linha = (label, f) => {
-    const oficial = f.official ? escapeHtml(f.official) : '—';
+    if (!f) return '';
+    const oficial = f.official ? escapeHtml(f.official) : 'A definir';
     const palpite = f.guess ? escapeHtml(f.guess) : '<span style="opacity:.6">não palpitou</span>';
-    const ptsColor = f.hit ? 'var(--success)' : 'var(--muted)';
-    const ptsTxt = f.hit ? `+${f.points} pts` : '0 pts';
+    
+    // Calcula cores e textos baseados na existência de resultado oficial
+    const ptsColor = has_off ? (f.hit ? 'var(--success)' : 'var(--muted)') : 'var(--muted)';
+    const ptsTxt = has_off ? (f.hit ? `+${f.points} pts` : '0 pts') : 'Aguardando';
+
     return `
       <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--divider);">
         <div style="font-size:12px; color:var(--navy-ink); font-weight:700;">
@@ -3485,21 +3508,23 @@ function _renderExtraBlockModal(extra){
         </div>
         <div style="text-align:right; white-space:nowrap;">
           <div style="font-size:13px; font-weight:800; color:var(--navy);">${palpite}</div>
-          <div style="font-size:10px; font-weight:800; color:${ptsColor};">${f.hit ? '✓ ' : ''}${ptsTxt}</div>
+          <div style="font-size:10px; font-weight:800; color:${ptsColor};">${(has_off && f.hit) ? '✓ ' : ''}${ptsTxt}</div>
         </div>
       </div>`;
   };
+
   return `
     <div style="background:linear-gradient(135deg, rgba(226,176,69,0.10), rgba(226,176,69,0.02)); border:1px solid var(--gold); border-radius:10px; padding:12px 14px; margin-bottom:16px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
         <span style="font-size:12px; font-weight:800; color:var(--gold-dark); text-transform:uppercase; letter-spacing:.5px;">🏆 Palpites Bônus</span>
-        <span style="font-size:12px; font-weight:800; color:var(--gold-dark);">${extra.total_points} pts</span>
+        <span style="font-size:12px; font-weight:800; color:var(--gold-dark);">${totalPts} pts</span>
       </div>
-      ${linha('Seleção Campeã', extra.fields.campeao)}
-      ${linha('Artilheiro', extra.fields.artilheiro)}
-      ${linha('Melhor Jogador', extra.fields.melhor_jogador)}
+      ${linha('Seleção Campeã', fields.campeao || {})}
+      ${linha('Artilheiro', fields.artilheiro || {})}
+      ${linha('Melhor Jogador', fields.melhor_jogador || {})}
     </div>`;
 }
+
 
 // Item 2 — palpites de um participante (clique no nome do ranking)
 async function openMemberGuesses(membershipId, codinome){

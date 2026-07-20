@@ -394,7 +394,14 @@ def member_guesses(
         item["official"] = official.get(m["id"])
         items.append(item)
 
-    return {"membership_id": membership_id, "codinome": target.codinome, "items": items}
+    extra_block = build_extra_block(db, membership_id)
+
+    return {
+        "membership_id": membership_id, 
+        "codinome": target.codinome, 
+        "items": items,
+        "extra": extra_block # <--- A CHAVE QUE FALTAVA PRO FRONTEND LER
+    }
 
 
 # ----------------------------------------------------------------------------
@@ -444,4 +451,32 @@ def all_guesses(
         entry["official"] = official.get(m["id"])
         out.append(entry)
 
-    return {"matches": out}
+    
+    extra_guesses_db = db.exec(select(ExtraGuess).where(ExtraGuess.membership_id.in_(member_ids))).all()
+    extra_guesses_list = []
+    for eg in extra_guesses_db:
+        # Usa a função do backend pra calcular os pontos exatos que o cara ganhou
+        block = build_extra_block(db, eg.membership_id)
+        extra_guesses_list.append({
+            "codinome": codinome_by_mid.get(eg.membership_id, "—"),
+            "campeao": eg.campeao,
+            "campeao_points": block["fields"]["campeao"]["points"],
+            "artilheiro": eg.artilheiro,
+            "artilheiro_points": block["fields"]["artilheiro"]["points"],
+            "melhor_jogador": eg.melhor_jogador,
+            "melhor_jogador_points": block["fields"]["melhor_jogador"]["points"],
+        })
+
+    # NOVO: Pega o gabarito oficial para exibir nos cabeçalhos
+    oficial = db.get(ChampionshipResult, 1)
+    official_extras = {
+        "campeao": _clean_official(oficial.campeao if oficial else None),
+        "artilheiro": _clean_official(oficial.artilheiro if oficial else None),
+        "melhor_jogador": _clean_official(oficial.melhor_jogador if oficial else None),
+    }
+
+    return {
+        "matches": out,
+        "extra_guesses": extra_guesses_list,   # <--- LISTA PRA ABA "PALPITES DE TODOS"
+        "official_extras": official_extras     # <--- O GABARITO PRO CABEÇALHO
+    }

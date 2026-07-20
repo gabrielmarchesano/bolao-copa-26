@@ -3545,6 +3545,56 @@ async function openMemberGuesses(membershipId, codinome){
 }
 
 // Item 3 — palpites de todos, por jogo
+// 1. Função auxiliar para renderizar os palpites extras agrupados (Modal de Todos)
+function _renderAllExtras(data) {
+  const extrasList = data.extra_guesses;
+  const official = data.official_extras || {};
+  
+  if (!extrasList || !Array.isArray(extrasList) || extrasList.length === 0) {
+    return ''; // Ninguém fez palpite extra ainda
+  }
+
+  // Agrupa os palpites por categoria
+  const grouped = { campeao: [], artilheiro: [], melhor_jogador: [] };
+
+  extrasList.forEach(item => {
+    if (item.campeao) grouped.campeao.push({ name: item.codinome, guess: item.campeao, pts: item.campeao_points || 0 });
+    if (item.artilheiro) grouped.artilheiro.push({ name: item.codinome, guess: item.artilheiro, pts: item.artilheiro_points || 0 });
+    if (item.melhor_jogador) grouped.melhor_jogador.push({ name: item.codinome, guess: item.melhor_jogador, pts: item.melhor_jogador_points || 0 });
+  });
+
+  // Função interna para desenhar cada bloco (Campeão, Artilheiro, etc)
+  const renderBox = (title, key, arr) => {
+    if (arr.length === 0) return '';
+    
+    const off = official[key] ? escapeHtml(official[key]) : 'A definir';
+    
+    const linhas = arr.map(g => `
+      <div style="display:flex; justify-content:space-between; padding:4px 0; font-size:12px; border-bottom:1px dashed rgba(226,176,69,0.2);">
+        <span style="color:var(--navy-ink); font-weight:600;">${escapeHtml(g.name)}</span>
+        <span style="font-weight:800; color:var(--navy);">${escapeHtml(g.guess)} ${g.pts ? `<span style="color:var(--success); font-size:10px;">(+${g.pts} pts)</span>` : ''}</span>
+      </div>`).join('');
+
+    return `
+      <div style="margin-bottom:12px; background:linear-gradient(135deg, rgba(226,176,69,0.10), rgba(226,176,69,0.02)); border:1px solid var(--gold); border-radius:10px; padding:12px 14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; font-weight:800; color:var(--gold-dark); text-transform:uppercase; letter-spacing:.5px; border-bottom:1px solid rgba(226,176,69,0.3); padding-bottom:6px; margin-bottom:6px;">
+          <span>🏆 ${title}</span>
+          <span style="color:var(--muted); font-weight:600; font-size:10px; text-transform:none;">Oficial: ${off}</span>
+        </div>
+        ${linhas}
+      </div>`;
+  };
+
+  const htmlCampeao = renderBox('Seleção Campeã', 'campeao', grouped.campeao);
+  const htmlArtilheiro = renderBox('Artilheiro', 'artilheiro', grouped.artilheiro);
+  const htmlMelhor = renderBox('Melhor Jogador', 'melhor_jogador', grouped.melhor_jogador);
+
+  if (!htmlCampeao && !htmlArtilheiro && !htmlMelhor) return '';
+
+  return `<div style="margin-bottom: 24px;">${htmlCampeao}${htmlArtilheiro}${htmlMelhor}</div>`;
+}
+
+// 2. Atualização do Item 3 — palpites de todos, por jogo
 async function openAllGuesses(){
   const id = window.currentBolaoId;
   _openGuessesModal('Palpites de todos', 'Buscar por seleção ou participante…');
@@ -3552,7 +3602,12 @@ async function openAllGuesses(){
     const r = await authFetch(`/boloes/${id}/guesses/all`);
     if (!r.ok) throw new Error('Erro ao carregar palpites.');
     const data = await r.json();
-    _guessesView = { entries: data.matches, renderEntry: _renderAllMatch, filterEntry: _filterAllMatch };
+    _guessesView = { 
+        entries: data.matches, 
+        renderEntry: _renderAllMatch, 
+        filterEntry: _filterAllMatch,
+        topHtml: _renderAllExtras(data) // <--- Agora o topHtml é injetado aqui!
+    };
     _renderGuessesView('');
   } catch(e){ document.getElementById('guessesBody').innerHTML = `<div class="calendar-empty">${e.message}</div>`; }
 }
